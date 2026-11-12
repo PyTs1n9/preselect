@@ -1,0 +1,4 @@
+# 四份比赛材料均为PDF，以下均为运行依赖。Python >= 3.10。
+requests>=2.32,<3
+pypdf>=6,<7
+fonttools>=4.60,<5
