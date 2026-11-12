@@ -1,0 +1,638 @@
+{
+  "document_type": "experiment",
+  "facts": [
+    {
+      "page": 4,
+      "kind": "finding",
+      "claim": "语义熵是一种在考虑回答含义后衡量生成结果不确定性的方法。在所研究的全部模型规模中，语义熵优于基线方法；P (True) 似乎随模型规模增大而改善，作者据此推测，它可能在能力很强、诚实且充分理解任务的模型与场景下更有竞争力，但这些并非最需要良好不确定性判断的情形。",
+      "quote": "Although semantic entropy outperforms the baselines across all model sizes, P (True) seems to improve with model size, suggesting that it might become more competitive for very capable honest models in settings that the model understands well (which are, however, not the most important cases to have good uncertainty).",
+      "subject": "semantic entropy",
+      "metric": "",
+      "value": "",
+      "unit": "",
+      "condition": "across all model sizes",
+      "strength": "outperforms",
+      "id": "C002-F01",
+      "quote_verified": true
+    },
+    {
+      "page": 4,
+      "kind": "method",
+      "claim": "研究使用十次生成结果计算熵，生成次数依据补充图2中的分析选定。",
+      "quote": "We use ten generations to compute entropy, selected using analysis in Supplementary Fig. 2.",
+      "subject": "We",
+      "metric": "entropy",
+      "value": "ten",
+      "unit": "generations",
+      "condition": "selected using analysis in Supplementary Fig. 2",
+      "strength": "",
+      "id": "C002-F02",
+      "quote_verified": true
+    },
+    {
+      "page": 4,
+      "kind": "limitation",
+      "claim": "图2的评估检测的是模型回答是否错误，并以人工正确性评估加以验证。这既包含编造导致的任意性错误，也包含语义熵不适合检测的其他错误，例如从训练数据中学到的一致性错误；作者因此将图2结果视为语义熵检测编造有效性的下界。",
+      "quote": "The results in Fig. 2 offer a lower bound on the effectiveness of semantic entropy at detecting confabulations. These evaluations determine whether semantic entropy and baseline methods can detect when the answers of the model are incorrect (which we validate against human correctness evaluations in Supplementary Table 4). In addition to errors from confabulations (arbitrary incorrectness), this also includes other types of mistakes for which semantic entropy is not suited, such as consistent errors learned from the training data.",
+      "subject": "semantic entropy",
+      "metric": "effectiveness",
+      "value": "",
+      "unit": "",
+      "condition": "at detecting confabulations",
+      "strength": "a lower bound",
+      "id": "C002-F03",
+      "quote_verified": true
+    },
+    {
+      "page": 4,
+      "kind": "example",
+      "claim": "表1第一行展示了含义一致、措辞不同的情况：语义熵将这些生成结果归入同一组，正确判断回答不是编造，而朴素熵会错误地判为编造。这里的朴素熵指未按语义一致性将不同措辞归为同组的不确定性指标。",
+      "quote": "The first row of Table 1 demonstrates a case in which semantic entropy correctly predicts that an answer is not a confabulation if naive entropy would incorrectly predict a confabulation. All of the generations from the model mean the same thing as each other so they are clustered together despite using different phrasings.",
+      "subject": "semantic entropy",
+      "metric": "",
+      "value": "",
+      "unit": "",
+      "condition": "All of the generations from the model mean the same thing as each other",
+      "strength": "correctly predicts",
+      "id": "C002-F04",
+      "quote_verified": true
+    },
+    {
+      "page": 4,
+      "kind": "example",
+      "claim": "表1最后一行展示了语义分组过于敏感导致语义熵错误偏高的情况：方法将提供具体日期的回答与只提供年份的回答分开，但作者认为，在这个语境下，两者的区别可能无关紧要。这也说明语义分组需要考虑语境和判断，而固定参考答案难以涵盖对话应用中开放回答的灵活性。",
+      "quote": "In the final row, we give an example in which semantic entropy is erroneously high as a result of overly sensitive semantic clustering relative to the reference answer. Our clustering method distinguishes the answers which provide a precise date from those which only provide a year. For some contexts that would have been correct but in this context the distinction between the specific day and the year is probably irrelevant. This highlights the importance of context and judgement in clustering, especially in subtle cases, as well as the shortcomings of evaluating against fixed reference answers which do not capture the open-ended flexibility of conversational deployments of LLMs.",
+      "subject": "semantic entropy",
+      "metric": "",
+      "value": "",
+      "unit": "",
+      "condition": "in this context",
+      "strength": "probably irrelevant",
+      "id": "C002-F05",
+      "quote_verified": true
+    },
+    {
+      "page": 4,
+      "kind": "method",
+      "claim": "为检验较长文本中的编造检测，研究建立了由GPT-4（v.0613）生成的人物传记数据集，涉及21位有维基百科页面、但网上传记资料不多的人物。",
+      "quote": "Nevertheless, we can use semantic entropy to detect confabulations in longer generations, such as entire paragraphs of text. T o show this, we develop a dataset of biographical generations from GPT-4 (v.0613) for 21 individuals notable enough to have their own Wikipedia page but without extensive online biographies.",
+      "subject": "GPT-4 (v.0613)",
+      "metric": "",
+      "value": "21",
+      "unit": "individuals",
+      "condition": "notable enough to have their own Wikipedia page but without extensive online biographies",
+      "strength": "can",
+      "id": "C002-F06",
+      "quote_verified": true
+    },
+    {
+      "page": 5,
+      "kind": "method",
+      "claim": "人物传记实验共涉及150条关于人物的事实陈述，由研究者人工标注真假。",
+      "quote": "factual claims about the individual (150 factual claims in total), which we manually label as true or false.",
+      "subject": "factual claims about the individual",
+      "metric": "",
+      "value": "150",
+      "unit": "factual claims",
+      "condition": "in total",
+      "strength": "",
+      "id": "C002-F07",
+      "quote_verified": true
+    },
+    {
+      "page": 5,
+      "kind": "problem",
+      "claim": "直接在已有文本条件下重新生成传记中的每句话，会遇到不同生成结果谈论不同方面的问题，例如一次谈家庭，另一次谈职业；这种变化可能反映模型不确定事实的排列顺序，而不是不确定事实本身。",
+      "quote": "Applying semantic entropy to this problem is challenging. Naively, one might simply regenerate each sentence (conditioned on the text so far) and then compute semantic entropy over these regenerations. However, the resampled sentences often target different aspects of the biography: for example, one time describing family and the next time profession. This is analogous to the original problem semantic entropy was designed to resolve: the model is uncertain about the right ordering of facts, not about the facts themselves.",
+      "subject": "the resampled sentences",
+      "metric": "",
+      "value": "",
+      "unit": "",
+      "condition": "conditioned on the text so far",
+      "strength": "often",
+      "id": "C002-F08",
+      "quote_verified": true
+    },
+    {
+      "page": 5,
+      "kind": "method",
+      "claim": "研究先将整段传记拆成事实陈述，再构造这些陈述可能回答的问题；每个问题生成三个新回答，与原始事实陈述一起计算语义熵，再对相关问题的语义熵取平均，得到各命题的不确定性分数，用于检测编造。",
+      "quote": "T o address this, we break down the entire paragraph into factual claims and reconstruct questions which might have been answered by those claims. Only then do we apply semantic entropy (Fig. 1) by generating three new answers to each question (selected with analysis in Supplementary Figs. 3 and 4) and computing the semantic entropy over those generations plus the original factual claim. We aggregate these by averaging the semantic entropy over all the questions to get an uncertainty score for each proposition, which we use to detect confabulations.",
+      "subject": "We",
+      "metric": "semantic entropy",
+      "value": "three",
+      "unit": "new answers",
+      "condition": "to each question",
+      "strength": "",
+      "id": "C002-F09",
+      "quote_verified": true
+    },
+    {
+      "page": 5,
+      "kind": "method",
+      "claim": "由于撰文时GPT-4不提供生成概率，研究采用离散语义熵：仅根据生成结果估计各语义分组出现的比例，以此近似其概率分布。这使方法能只使用模型输出，但缺少输出概率与嵌入表示，也使研究无法为GPT-4计算朴素熵基线、标准语义熵估计及嵌入回归基线；嵌入表示是文本的数值表示，嵌入回归基线利用这种表示进行回归预测。",
+      "quote": "As GPT-4 did not allow access to the probability of the generation at the time of writing, we use a discrete variant of semantic entropy which makes the further approximation that we can infer a discrete empirical distribution over semantic meaning clusters from only the generations (Methods). This allows us to compute semantic entropy using only the black-box outputs of an LLM. However, we were unable to compute the naive entropy baseline, the standard semantic entropy estimator or the embedding regression baseline for GPT-4 without output probabilities and embeddings.",
+      "subject": "we",
+      "metric": "semantic entropy",
+      "value": "",
+      "unit": "",
+      "condition": "without output probabilities and embeddings",
+      "strength": "approximation",
+      "id": "C002-F10",
+      "quote_verified": true
+    },
+    {
+      "page": 5,
+      "kind": "finding",
+      "claim": "在GPT-4生成的段落长度人物传记实验中，离散语义熵的AUROC和AURAC均优于两种基线；这两个指标用于评价检测排序及按排序拒绝部分回答后的表现，不能直接当作回答准确率。当回答的问题比例高于80%时，语义熵的准确率最高；只有拒绝被判断最可能编造的前20%回答时，P(True)基线在剩余回答上的准确率才超过语义熵。",
+      "quote": "Fig. 3 | Detecting GPT-4 confabulations in paragraph-length biographies. The discrete variant of our semantic entropy estimator outperforms baselines both when measured by AUROC and AURAC metrics (scored on the y -axis). The AUROC and AURAC are substantially higher than for both baselines. At above 80% of questions being answered, semantic entropy has the highest accuracy. Only when the top 20% of answers judged most likely to be confabulations are rejected does the answer accuracy on the remainder for the P(True) baseline exceed semantic entropy.",
+      "subject": "The discrete variant of our semantic entropy estimator",
+      "metric": "AUROC and AURAC",
+      "value": "80%",
+      "unit": "",
+      "condition": "At above 80% of questions being answered",
+      "strength": "substantially higher",
+      "id": "C002-F11",
+      "quote_verified": true
+    },
+    {
+      "page": 5,
+      "kind": "limitation",
+      "claim": "作者明确指出，方法不直接处理模型自信却错误的情形，包括训练目标系统性地产生危险行为、系统性推理错误或系统性误导用户的情况。作者认为，尽管表面表现相似，这些情况的底层机制不同，需要分别处理。",
+      "quote": "Our method explicitly does not directly address situations in which LLMs are confidently wrong because they have been trained with objectives that systematically produce dangerous behaviour, cause systematic reasoning errors or are systematically mislead -\ning the user. We believe that these represent different underlying mechanisms—despite similar ‘symptoms’—and need to be handled separately.",
+      "subject": "Our method",
+      "metric": "",
+      "value": "",
+      "unit": "",
+      "condition": "situations in which LLMs are confidently wrong",
+      "strength": "does not directly address",
+      "id": "C002-F12",
+      "quote_verified": true
+    },
+    {
+      "page": 7,
+      "kind": "finding",
+      "claim": "语义熵方法旨在衡量模型对生成内容含义的不确定性，而不是对具体措辞的不确定性。",
+      "quote": "Our semantic uncertainty method therefore seeks to estimate only the uncertainty the LLM has over the meaning of its generation, not the choice of words.",
+      "subject": "the LLM",
+      "metric": "the uncertainty",
+      "value": "",
+      "unit": "",
+      "condition": "over the meaning of its generation, not the choice of words",
+      "strength": "seeks to estimate",
+      "id": "C003-F01",
+      "quote_verified": true
+    },
+    {
+      "page": 7,
+      "kind": "method",
+      "claim": "语义熵的流程包括采样生成、按含义聚类，再汇总同义序列的概率并计算熵。",
+      "quote": "1. Generation: sample output sequences of tokens from the predictive distribution of a LLM given a context x.\n2. Clustering: cluster sequences by their meaning using our clustering algorithm based on bidirectional entailment.\n3. Entropy estimation: estimate semantic entropy by summing probabilities of sequences that share a meaning following equation (2) and compute their entropy.",
+      "subject": "sequences",
+      "metric": "semantic entropy",
+      "value": "",
+      "unit": "",
+      "condition": "given a context x",
+      "strength": "estimate",
+      "id": "C003-F02",
+      "quote_verified": true
+    },
+    {
+      "page": 7,
+      "kind": "method",
+      "claim": "该方法对任意大型语言模型或类似基础模型均可直接应用，无需修改模型架构；离散版本在无法获取生成概率时也能应用。",
+      "quote": "It can be applied directly to any LLM or similar foundation model without requiring any modifications to the architecture. Our ‘discrete’ variant of semantic uncertainty can be applied even when the predicted probabilities for the generations are not available, for example, because access to the internals of the model is limited.",
+      "subject": "It",
+      "metric": "",
+      "value": "",
+      "unit": "",
+      "condition": "to any LLM or similar foundation model",
+      "strength": "can be applied",
+      "id": "C003-F03",
+      "quote_verified": true
+    },
+    {
+      "page": 7,
+      "kind": "background",
+      "claim": "预测熵低表示输出概率集中，高表示多个可能输出的概率相近。",
+      "quote": "A low predictive entropy indicates an output distribution which is heavily concentrated whereas a high predictive entropy indicates that many possible outputs are similarly likely.",
+      "subject": "A low predictive entropy",
+      "metric": "predictive entropy",
+      "value": "",
+      "unit": "",
+      "condition": "an output distribution",
+      "strength": "indicates",
+      "id": "C003-F04",
+      "quote_verified": true
+    },
+    {
+      "page": 7,
+      "kind": "limitation",
+      "claim": "研究分析没有区分偶然不确定性与认知不确定性。",
+      "quote": "We do not distinguish between aleatoric and epistemic uncertainty in our analysis.",
+      "subject": "We",
+      "metric": "aleatoric and epistemic uncertainty",
+      "value": "",
+      "unit": "",
+      "condition": "in our analysis",
+      "strength": "do not distinguish",
+      "id": "C003-F05",
+      "quote_verified": true
+    },
+    {
+      "page": 7,
+      "kind": "limitation",
+      "claim": "长度归一化在经验上取得过一些成功，但在文献中缺少充分理论依据。",
+      "quote": "Length normalization has some empirical success48, including in our own preliminary experiments, but little theoretical justification in the literature.",
+      "subject": "Length normalization",
+      "metric": "empirical success",
+      "value": "some",
+      "unit": "",
+      "condition": "including in our own preliminary experiments",
+      "strength": "some",
+      "id": "C003-F06",
+      "quote_verified": true
+    },
+    {
+      "page": 7,
+      "kind": "method",
+      "claim": "研究从同一模型采样多条序列，只改变采样随机种子，并记录序列的词元概率。",
+      "quote": "We sample all our generations from a single model, varying only the random seed used for sampling from the token probabilities.",
+      "subject": "all our generations",
+      "metric": "",
+      "value": "a single model",
+      "unit": "",
+      "condition": "varying only the random seed used for sampling from the token probabilities",
+      "strength": "sample",
+      "id": "C003-F07",
+      "quote_verified": true
+    },
+    {
+      "page": 7,
+      "kind": "finding",
+      "claim": "作者称该方法对采样方案细节并不特别敏感。",
+      "quote": "We do not observe the method to be particularly sensitive to details of the sampling scheme.",
+      "subject": "the method",
+      "metric": "sensitive to details of the sampling scheme",
+      "value": "",
+      "unit": "",
+      "condition": "",
+      "strength": "do not observe",
+      "id": "C003-F08",
+      "quote_verified": true
+    },
+    {
+      "page": 8,
+      "kind": "method",
+      "claim": "研究用双向蕴含判断两个回答是否表达相同含义，并据此将句子聚类；判断时考虑问题上下文。",
+      "quote": "A sequence, s, means the same thing as a second sequence, s′, only if the sequences entail (that is, logically imply) each other.",
+      "subject": "A sequence, s",
+      "metric": "",
+      "value": "",
+      "unit": "",
+      "condition": "only if the sequences entail (that is, logically imply) each other",
+      "strength": "only if",
+      "id": "C004-F01",
+      "quote_verified": true
+    },
+    {
+      "page": 8,
+      "kind": "example",
+      "claim": "在问题“What is the capital of France?”的上下文中，单词回答“Paris”能够蕴含较长回答。",
+      "quote": "But in the context of the question ‘What is the capital of France?’ , the one-word answer does entail the longer answer.",
+      "subject": "the one-word answer",
+      "metric": "",
+      "value": "",
+      "unit": "",
+      "condition": "in the context of the question ‘What is the capital of France?’",
+      "strength": "does entail",
+      "id": "C004-F02",
+      "quote_verified": true
+    },
+    {
+      "page": 8,
+      "kind": "method",
+      "claim": "语义熵通过把生成答案按含义归类，并汇总每类所含序列的概率，估计模型对不同含义的概率分布，再计算该分布的熵。",
+      "quote": "Having determined the classes of generated sequences that mean the same thing, we can estimate the likelihood that a sequence generated by the LLM belongs to a given class by computing the sum of the probabilities of all the possible sequences of tokens which can be considered to express the same meaning",
+      "subject": "the classes of generated sequences",
+      "metric": "the sum of the probabilities",
+      "value": "",
+      "unit": "",
+      "condition": "which can be considered to express the same meaning",
+      "strength": "can estimate",
+      "id": "C004-F03",
+      "quote_verified": true
+    },
+    {
+      "page": 8,
+      "kind": "method",
+      "claim": "当无法取得序列概率时，离散语义熵按各含义类别在已采样答案中的占比估计概率，并忽略token概率。",
+      "quote": "Discrete semantic entropy approximates P(Ci∣x) directly from the number of generations in each cluster, disregarding the token probabilities.",
+      "subject": "Discrete semantic entropy",
+      "metric": "P(Ci∣x)",
+      "value": "",
+      "unit": "",
+      "condition": "disregarding the token probabilities",
+      "strength": "approximates",
+      "id": "C004-F04",
+      "quote_verified": true
+    },
+    {
+      "page": 8,
+      "kind": "finding",
+      "claim": "作者报告，离散语义熵在经验上取得了相近的表现。",
+      "quote": "We find that discrete semantic entropy results in similar performance empirically.",
+      "subject": "discrete semantic entropy",
+      "metric": "performance",
+      "value": "",
+      "unit": "",
+      "condition": "empirically",
+      "strength": "similar",
+      "id": "C004-F05",
+      "quote_verified": true
+    },
+    {
+      "page": 8,
+      "kind": "problem",
+      "claim": "实验使用语义不确定性预测模型准确性，并研究拒答高语义不确定性问题能否提高准确性。",
+      "quote": "In our experiments, we use semantic uncertainty to predict model accuracy, demonstrating that confabulations make up a notable fraction of model mistakes. We further show that semantic uncertainty can be used to improve model accuracy by refusing to answer questions when semantic uncertainty is high.",
+      "subject": "semantic uncertainty",
+      "metric": "model accuracy",
+      "value": "",
+      "unit": "",
+      "condition": "by refusing to answer questions when semantic uncertainty is high",
+      "strength": "can be used to improve",
+      "id": "C004-F06",
+      "quote_verified": true
+    },
+    {
+      "page": 9,
+      "kind": "method",
+      "claim": "研究用AUROC、拒答准确率和AURAC评估方法；AUROC衡量随机抽取的正确答案比随机抽取的错误答案获得更高置信度的概率，完美分类器的AUROC为1。",
+      "quote": "The AUROC can be interpreted as the probability that a randomly chosen correct answer has been assigned a higher confidence score than a randomly chosen incorrect answer. For a perfect classifier, this is 1.",
+      "subject": "The AUROC",
+      "metric": "the probability that a randomly chosen correct answer has been assigned a higher confidence score than a randomly chosen incorrect answer",
+      "value": "1",
+      "unit": "",
+      "condition": "For a perfect classifier",
+      "strength": "perfect",
+      "id": "C004-F09",
+      "quote_verified": true
+    },
+    {
+      "page": 9,
+      "kind": "method",
+      "claim": "句子长度回答的正确与否由GPT-4自动比较模型回答与参考答案是否在问题语境中表达相同含义；作者报告人工检查中GPT-4对模型准确性的判定效果最好，因此用于所有句子长度实验。",
+      "quote": "For sentence-length generations, we therefore automatically determine whether an answer to the question is correct or incorrect by using GPT-4 to compare the given answer to the reference answer.",
+      "subject": "GPT-4",
+      "metric": "",
+      "value": "",
+      "unit": "",
+      "condition": "For sentence-length generations",
+      "strength": "automatically determine",
+      "id": "C004-F11",
+      "quote_verified": true
+    },
+    {
+      "page": 10,
+      "kind": "limitation",
+      "claim": "直接对每个句子重复采样会产生与模型对事实主张的不确定性无关的变化，例如段落结构差异，因此研究者采用了间接生成回答的方法。",
+      "quote": "We pursue this slightly indirect way of generating answers because we find that simply resampling each sentence creates variation unrelated to the uncertainty of the model about the factual claim, such as differences in paragraph structure.",
+      "subject": "simply resampling each sentence",
+      "metric": "",
+      "value": "",
+      "unit": "",
+      "condition": "unrelated to the uncertainty of the model about the factual claim",
+      "strength": "creates",
+      "id": "C005-F02",
+      "quote_verified": true
+    },
+    {
+      "page": 10,
+      "kind": "finding",
+      "claim": "研究者表示，他们在数据集中的所有案例里都认同模型对事实主张的拆分。",
+      "quote": "We found that we agreed with the decompositions in all cases in the dataset.",
+      "subject": "we",
+      "metric": "",
+      "value": "all",
+      "unit": "cases",
+      "condition": "in the dataset",
+      "strength": "agreed",
+      "id": "C005-F03",
+      "quote_verified": true
+    },
+    {
+      "page": 10,
+      "kind": "method",
+      "claim": "每项事实主张生成六个问题；每次提示生成三个问题，并执行两次提示以改善覆盖。",
+      "quote": "We generate three questions with each prompt, as this encourages diversity of the questions, each question targeting a different aspect of the fact. However, we observed that the generated questions will sometimes miss obvious aspects of the fact. Executing the above prompt twice (for a total of six questions) can improve coverage.",
+      "subject": "the generated questions",
+      "metric": "six questions",
+      "value": "three",
+      "unit": "questions",
+      "condition": "Executing the above prompt twice",
+      "strength": "can improve",
+      "id": "C005-F04",
+      "quote_verified": true
+    },
+    {
+      "page": 10,
+      "kind": "limitation",
+      "claim": "生成的问题有时会漏掉事实中明显的方面；作者指出，这一步的难度是该流程中错误的主要来源。",
+      "quote": "These questions are not necessarily well-targeted and the difficulty of this step is the main source of errors in the procedure.",
+      "subject": "These questions",
+      "metric": "",
+      "value": "",
+      "unit": "",
+      "condition": "in the procedure",
+      "strength": "the main source of errors",
+      "id": "C005-F05",
+      "quote_verified": true
+    },
+    {
+      "page": 10,
+      "kind": "method",
+      "claim": "研究者将原始事实主张与重新生成的回答一并纳入语义熵计算，以使估计仍以原主张为依据，并帮助发现问题被理解成与原上下文完全不同的情况。",
+      "quote": "Including the original fact ensures that the estimator remains grounded in the original claim and helps detect situations in which the question has been interpreted completely differently from the original context.",
+      "subject": "Including the original fact",
+      "metric": "",
+      "value": "",
+      "unit": "",
+      "condition": "the question has been interpreted completely differently from the original context",
+      "strength": "ensures",
+      "id": "C005-F06",
+      "quote_verified": true
+    },
+    {
+      "page": 10,
+      "kind": "method",
+      "claim": "如果超过一半的回答包含指定的拒答或不确定性字符串，研究者就将语义不确定性视为最大。",
+      "quote": "If more than half of the answers include one of the strings ‘not available’ , ‘not provided’ , ‘unknown’ or ‘unclear’ then we treat the semantic uncertainty as maximal.",
+      "subject": "the answers",
+      "metric": "more than half",
+      "value": "more than half",
+      "unit": "of the answers",
+      "condition": "include one of the strings ‘not available’ , ‘not provided’ , ‘unknown’ or ‘unclear’",
+      "strength": "maximal",
+      "id": "C005-F07",
+      "quote_verified": true
+    },
+    {
+      "page": 10,
+      "kind": "finding",
+      "claim": "作者表示，尽管该方法增加了假设和复杂度，但其表现大幅优于基线方法。",
+      "quote": "Despite the extra assumptions and complexity, we find that this method greatly outperforms the baselines.",
+      "subject": "this method",
+      "metric": "the baselines",
+      "value": "",
+      "unit": "",
+      "condition": "Despite the extra assumptions and complexity",
+      "strength": "greatly outperforms",
+      "id": "C005-F08",
+      "quote_verified": true
+    },
+    {
+      "page": 10,
+      "kind": "finding",
+      "claim": "作者指出，直接询问模型某个陈述是否可能为真，尽管在模型具备良好自我认知时可能表现很好，但在检测虚构内容方面，语义熵实际上更好。",
+      "quote": "It is interesting that this method ought to perform very well if we think that the model has good ‘self-knowledge’ (that is, if “models mostly know what they don’t know”24) but in fact semantic entropy is much better at detecting confabulations.",
+      "subject": "semantic entropy",
+      "metric": "detecting confabulations",
+      "value": "",
+      "unit": "",
+      "condition": "if we think that the model has good ‘self-knowledge’",
+      "strength": "much better",
+      "id": "C005-F10",
+      "quote_verified": true
+    }
+  ],
+  "chunks": [
+    {
+      "index": 1,
+      "pages": [
+        1,
+        2,
+        3
+      ],
+      "fact_count": 0,
+      "fallback": true
+    },
+    {
+      "index": 2,
+      "pages": [
+        4,
+        5
+      ],
+      "fact_count": 12,
+      "fallback": false
+    },
+    {
+      "index": 3,
+      "pages": [
+        6,
+        7
+      ],
+      "fact_count": 8,
+      "fallback": false
+    },
+    {
+      "index": 4,
+      "pages": [
+        8,
+        9
+      ],
+      "fact_count": 8,
+      "fallback": false
+    },
+    {
+      "index": 5,
+      "pages": [
+        10,
+        11,
+        12
+      ],
+      "fact_count": 8,
+      "fallback": false
+    }
+  ],
+  "validation": [
+    {
+      "attempt": 0,
+      "errors": []
+    }
+  ],
+  "quality_checks": [
+    {
+      "checked": [
+        "objects_metrics",
+        "strength",
+        "negative_claims",
+        "core_coverage",
+        "boundaries",
+        "expression"
+      ],
+      "issues": [
+        {
+          "category": "coverage",
+          "article_quote": "研究还检验了，依据这种不确定性拒绝回答部分问题，能否提高剩余回答的准确率。",
+          "evidence_quote": "We further show that semantic uncertainty can be used to improve model accuracy by refusing to answer questions when semantic",
+          "reason": "文章提出了拒答能否提高准确率这一实验问题，后文也解释了指标，但没有交代该实验的发现。给定引文已明确报告，语义不确定性可通过拒绝回答部分问题来提高模型准确率；仅写“检验了……能否”遗漏了这一核心结果。",
+          "suggestion": "补充研究报告的结果：依据语义不确定性拒绝回答部分问题，可以提高保留回答的准确率。保持实验范围，不补充给定引文未提供的提升幅度或拒答比例。"
+        }
+      ],
+      "quotes_verified": true,
+      "attempt": 0,
+      "status": "checked",
+      "article_fingerprint": "1a887622034b83ee"
+    },
+    {
+      "checked": [
+        "objects_metrics",
+        "strength",
+        "negative_claims",
+        "core_coverage",
+        "boundaries",
+        "expression"
+      ],
+      "issues": [],
+      "quotes_verified": true,
+      "attempt": 1,
+      "status": "checked",
+      "article_fingerprint": "e1bc9aa1f87c3a89"
+    }
+  ],
+  "quality_check_enabled": true,
+  "fact_errors": [
+    {
+      "chunk": 1,
+      "error": "调用失败（已重试 2 次）：ReadTimeout"
+    }
+  ],
+  "rejected_facts": [
+    {
+      "chunk": 3,
+      "count": 1,
+      "examples": [
+        "事实字段value不是原句中的摘录"
+      ]
+    },
+    {
+      "chunk": 4,
+      "count": 3,
+      "examples": [
+        "事实字段metric不是原句中的摘录",
+        "事实引文在当前片段第8页找不到，不接受编造或跨页拼接证据",
+        "事实引文在当前片段第9页找不到，不接受编造或跨页拼接证据"
+      ]
+    },
+    {
+      "chunk": 5,
+      "count": 2,
+      "examples": [
+        "事实引文在当前片段第10页找不到，不接受编造或跨页拼接证据",
+        "事实引文在当前片段第10页找不到，不接受编造或跨页拼接证据"
+      ]
+    }
+  ],
+  "quality_scope": "核查范围为生成使用的已验证原句事实记录；简要提炼片段仅作写作线索，未覆盖全文，不保证科学正确性。"
+}

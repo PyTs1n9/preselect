@@ -1,0 +1,605 @@
+{
+  "document_type": "review",
+  "facts": [
+    {
+      "page": 5,
+      "kind": "background",
+      "claim": "自扩增mRNA疫苗通常以甲病毒序列为基础，保留编码复制酶的非结构蛋白基因，并以目标抗原替代结构蛋白。",
+      "quote": "This modality typically uses sequences derived from alphaviruses in which the non-structural proteins (the replicase genes that encode the RNA-dependent RNA polymerase) are intact and the structural proteins are replaced with the antigen of interest15.",
+      "subject": "This modality",
+      "metric": "",
+      "value": "",
+      "unit": "",
+      "condition": "",
+      "strength": "typically",
+      "id": "C002-F01",
+      "quote_verified": true
+    },
+    {
+      "page": 5,
+      "kind": "finding",
+      "claim": "自扩增过程会产生双链RNA中间体，激活细胞RNA传感器并引发I型干扰素反应；这种炎症反应有助于免疫细胞激活，但会限制蛋白质产量并降低耐受性。",
+      "quote": "During the RNA self-amplification process, dsRNA intermediates are typically produced that elicit robust immune activation, specifically, type I interferon responses via the activation of various cellular RNA sensors15. The robust inflammatory response is beneficial for immune cell activation but limits protein production from the saRNA and decreases tolerability.",
+      "subject": "dsRNA intermediates",
+      "metric": "protein production from the saRNA",
+      "value": "",
+      "unit": "",
+      "condition": "During the RNA self-amplification process",
+      "strength": "typically produced",
+      "id": "C002-F02",
+      "quote_verified": true
+    },
+    {
+      "page": 5,
+      "kind": "finding",
+      "claim": "自扩增mRNA疫苗在临床前模型中即使使用低剂量也曾诱导强抗体和T细胞反应，但早期新冠疫苗人体试验表现不佳。",
+      "quote": "saRNA vaccines showed early promise in preclinical models, inducing robust antibody and T cell responses even at low vaccine doses48. Conversely, they did not perform well in humans in early COVID-19 vaccine trials49,50.",
+      "subject": "saRNA vaccines",
+      "metric": "antibody and T cell responses",
+      "value": "low",
+      "unit": "doses",
+      "condition": "in preclinical models",
+      "strength": "robust",
+      "id": "C002-F03",
+      "quote_verified": true
+    },
+    {
+      "page": 6,
+      "kind": "finding",
+      "claim": "离子化脂质在生理pH下不带电，在酸化的内体中转为带正电并通过破坏内体膜，促进mRNA进入细胞及核酸货物释放到细胞质；它们也具有强佐剂活性。",
+      "quote": "Ionizable lipids are uncharged at physiological pH, which makes them safer compared to the permanently positively charged alternatives. They facilitate cellular uptake of the mRNA and release of the nucleic acid cargo from the endosomes to the cytosol via the disruption of the endosomal membrane after becoming positively charged in the acidifying endosome58. In addition, they provide strong adjuvant activity for mRNA vaccines61,62.",
+      "subject": "Ionizable lipids",
+      "metric": "cellular uptake of the mRNA and release of the nucleic acid cargo from the endosomes to the cytosol",
+      "value": "",
+      "unit": "",
+      "condition": "after becoming positively charged in the acidifying endosome",
+      "strength": "strong",
+      "id": "C002-F07",
+      "quote_verified": true
+    },
+    {
+      "page": 7,
+      "kind": "limitation",
+      "claim": "作者指出，需要大型动物研究和临床试验确认啮齿动物中PACE-mRNA的结果能否适用于更高阶物种。",
+      "quote": "Large animal studies and clinical trials will be important to confirm whether the impressive findings in rodents with PACE-mRNA translate to higher-order species.",
+      "subject": "the impressive findings in rodents with PACE-mRNA",
+      "metric": "",
+      "value": "",
+      "unit": "",
+      "condition": "in rodents",
+      "strength": "will be important",
+      "id": "C002-F10",
+      "quote_verified": true
+    },
+    {
+      "page": 8,
+      "kind": "finding",
+      "claim": "不同研究对肌细胞是否摄取mRNA-LNP并表达蛋白报告不一：有研究报告肌细胞参与，另一些研究显示没有肌细胞参与；综述指出差异可能与LNP配方、细胞分析方案或mRNA平台有关。",
+      "quote": "While uptake of mRNA-LNP and expression of protein in myocytes has been reported in some studies, others have shown absence of involvement of myocytes. Early studies with saRNA identified muscle cells as the main type of cell expressing and presenting antigen82. The observed differences could be due to differences in LNP formulation, cellular analysis protocol or mRNA platform (non-replicating mRNA versus saRNA) (Fig. 2).",
+      "subject": "myocytes",
+      "metric": "uptake of mRNA-LNP and expression of protein",
+      "value": "",
+      "unit": "",
+      "condition": "in some studies",
+      "strength": "has been reported",
+      "id": "C002-F12",
+      "quote_verified": true
+    },
+    {
+      "page": 25,
+      "kind": "finding",
+      "claim": "该条目称，Petsch等人的研究是首篇展示直接注射、非复制型mRNA疫苗可诱导针对病毒病原体的保护性免疫反应的论文。",
+      "quote": "The first published paper demonstrating that a directly injected, non-replicating mRNA vaccine can induce protective immune responses against a viral pathogen.",
+      "subject": "a directly injected, non-replicating mRNA vaccine",
+      "metric": "protective immune responses",
+      "value": "",
+      "unit": "",
+      "condition": "against a viral pathogen",
+      "strength": "The first published paper demonstrating",
+      "id": "C007-F01",
+      "quote_verified": true
+    },
+    {
+      "page": 25,
+      "kind": "finding",
+      "claim": "该条目称，Baden等人与Polack等人的研究是首批报告mRNA疫苗大型III期临床试验结果的论文。",
+      "quote": "Along with Polack et al. (2020), the first report about the results of a large phase III clinical trial with an mRNA vaccine.",
+      "subject": "an mRNA vaccine",
+      "metric": "the results of a large phase III clinical trial",
+      "value": "",
+      "unit": "",
+      "condition": "",
+      "strength": "the first report",
+      "id": "C007-F02",
+      "quote_verified": true
+    },
+    {
+      "page": 25,
+      "kind": "finding",
+      "claim": "该条目称，Kariko等人的研究首次报告核苷修饰可降低体外转录mRNA的炎症能力。",
+      "quote": "The first report showing that nucleoside modification of IVT mRNA decreases its inflammatory capacity.",
+      "subject": "nucleoside modification of IVT mRNA",
+      "metric": "its inflammatory capacity",
+      "value": "",
+      "unit": "",
+      "condition": "",
+      "strength": "The first report showing",
+      "id": "C007-F03",
+      "quote_verified": true
+    },
+    {
+      "page": 25,
+      "kind": "finding",
+      "claim": "该条目称，Kariko等人的研究首次证明，在体外转录mRNA中引入修饰核苷可提高其可翻译性。",
+      "quote": "The first report demonstrating that the introduction of modified nucleosides to the IVT mRNA increases its translatability.",
+      "subject": "the introduction of modified nucleosides to the IVT mRNA",
+      "metric": "its translatability",
+      "value": "",
+      "unit": "",
+      "condition": "",
+      "strength": "The first report demonstrating",
+      "id": "C007-F04",
+      "quote_verified": true
+    },
+    {
+      "page": 26,
+      "kind": "finding",
+      "claim": "该条目称，Geall等人的研究首次使用脂质纳米颗粒递送RNA疫苗。",
+      "quote": "This is the first study that uses LNPs for RNA vaccine delivery.",
+      "subject": "LNPs",
+      "metric": "RNA vaccine delivery",
+      "value": "",
+      "unit": "",
+      "condition": "",
+      "strength": "the first study",
+      "id": "C007-F05",
+      "quote_verified": true
+    },
+    {
+      "page": 27,
+      "kind": "finding",
+      "claim": "该条目称，McGee等人的研究是首项提供核苷修饰自扩增RNA疫苗比较数据的研究。",
+      "quote": "The first study providing comparative data on nucleoside-modified saRNA vaccines.",
+      "subject": "nucleoside-modified saRNA vaccines",
+      "metric": "comparative data",
+      "value": "",
+      "unit": "",
+      "condition": "",
+      "strength": "The first study providing",
+      "id": "C007-F06",
+      "quote_verified": true
+    },
+    {
+      "page": 27,
+      "kind": "finding",
+      "claim": "该条目称，Blakney等人的研究首次描述了二分RNA递送平台。",
+      "quote": "The first study that describes a bipartite RNA-based delivery platform.",
+      "subject": "a bipartite RNA-based delivery platform",
+      "metric": "",
+      "value": "",
+      "unit": "",
+      "condition": "",
+      "strength": "The first study that describes",
+      "id": "C007-F07",
+      "quote_verified": true
+    },
+    {
+      "page": 27,
+      "kind": "finding",
+      "claim": "该条目称，Pardi等人的研究首次使用脂质纳米颗粒递送含核苷修饰的mRNA。",
+      "quote": "The first study that uses LNPs for nucleoside-modified mRNA delivery.",
+      "subject": "LNPs",
+      "metric": "nucleoside-modified mRNA delivery",
+      "value": "",
+      "unit": "",
+      "condition": "",
+      "strength": "The first study",
+      "id": "C007-F08",
+      "quote_verified": true
+    },
+    {
+      "page": 27,
+      "kind": "finding",
+      "claim": "该条目称，Semple等人的研究是首项详细报告使用脂质纳米颗粒进行体内RNA递送的研究。",
+      "quote": "The first detailed study that uses LNPs for in vivo RNA delivery.",
+      "subject": "LNPs",
+      "metric": "in vivo RNA delivery",
+      "value": "",
+      "unit": "",
+      "condition": "",
+      "strength": "The first detailed study",
+      "id": "C007-F09",
+      "quote_verified": true
+    },
+    {
+      "page": 28,
+      "kind": "finding",
+      "claim": "该条目称，Turner等人的研究显示，人类在接种mRNA疫苗后存在持续的生发中心反应。",
+      "quote": "An important study that shows long-lasting germinal centres in humans after mRNA vaccination.",
+      "subject": "germinal centres in humans",
+      "metric": "germinal centres",
+      "value": "",
+      "unit": "",
+      "condition": "after mRNA vaccination",
+      "strength": "long-lasting",
+      "id": "C007-F10",
+      "quote_verified": true
+    },
+    {
+      "page": 33,
+      "kind": "method",
+      "claim": "一项纵向研究追踪了接种COVID-19 mRNA疫苗后，SARS-CoV-2刺突蛋白抗体在诱导、衰减和稳定阶段的变化过程。",
+      "quote": "A longitudinal study describing the kinetics of SARS-CoV-2 spike antibody kinetics after COVID-19 mRNA vaccination through induction, waning and stabilization phases.",
+      "subject": "SARS-CoV-2 spike antibody",
+      "metric": "kinetics",
+      "value": "",
+      "unit": "",
+      "condition": "after COVID-19 mRNA vaccination through induction, waning and stabilization phases",
+      "strength": "",
+      "id": "C009-F01",
+      "quote_verified": true
+    },
+    {
+      "page": 36,
+      "kind": "finding",
+      "claim": "综述将该研究描述为首项证明核苷修饰mRNA-LNP平台可在临床前研究中用于被动免疫治疗的研究。",
+      "quote": "The first study demonstrating that the nucleoside-modified mRNA-LNP platform can be used for passive immunotherapy in preclinical studies.",
+      "subject": "nucleoside-modified mRNA-LNP platform",
+      "metric": "passive immunotherapy",
+      "value": "",
+      "unit": "",
+      "condition": "in preclinical studies",
+      "strength": "The first study demonstrating",
+      "id": "C009-F02",
+      "quote_verified": true
+    },
+    {
+      "page": 36,
+      "kind": "finding",
+      "claim": "综述将该研究描述为首项证明核苷修饰mRNA-LNP平台可成功用于人体被动免疫治疗的研究。",
+      "quote": "The first study demonstrating that the nucleoside-modified mRNA-LNP platform can be successfully used for passive immunotherapy in humans.",
+      "subject": "nucleoside-modified mRNA-LNP platform",
+      "metric": "passive immunotherapy",
+      "value": "",
+      "unit": "",
+      "condition": "in humans",
+      "strength": "The first study demonstrating",
+      "id": "C009-F03",
+      "quote_verified": true
+    },
+    {
+      "page": 46,
+      "kind": "example",
+      "claim": "作者以保护性抗原未知的复杂病原体为例，提出可将其所有开放阅读框制成mRNA疫苗，在动物攻击模型中测试，以较快识别保护性抗原，再作为候选疫苗开展更详细的临床前及可能的临床研究。",
+      "quote": "As an example, all open reading frames (ORFs) of a complex pathogen with unknown protective antigens could be produced as mRNA vaccines and tested in an animal challenge model, and protective antigens can be quickly identified that can then be developed as vaccine candidates for more detailed preclinical and potentially clinical studies.",
+      "subject": "all open reading frames (ORFs) of a complex pathogen with unknown protective antigens",
+      "metric": "protective antigens",
+      "value": "quickly identified",
+      "unit": "",
+      "condition": "tested in an animal challenge model",
+      "strength": "could",
+      "id": "C011-F02",
+      "quote_verified": true
+    },
+    {
+      "page": 50,
+      "kind": "background",
+      "claim": "表2汇总了截至2024年4月，在临床前和临床情境中使用mRNA技术递送抗体的已发表研究。",
+      "quote": "The table shows published studies that utilized the mRNA technology for antibody delivery in preclinical and clinical settings as of April 2024.",
+      "subject": "published studies",
+      "metric": "antibody delivery",
+      "value": "as of April 2024",
+      "unit": "",
+      "condition": "in preclinical and clinical settings",
+      "strength": "",
+      "id": "C011-F04",
+      "quote_verified": true
+    }
+  ],
+  "chunks": [
+    {
+      "index": 1,
+      "pages": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "fact_count": 0,
+      "fallback": true
+    },
+    {
+      "index": 2,
+      "pages": [
+        5,
+        6,
+        7,
+        8
+      ],
+      "fact_count": 6,
+      "fallback": false
+    },
+    {
+      "index": 3,
+      "pages": [
+        9,
+        10,
+        11,
+        12
+      ],
+      "fact_count": 0,
+      "fallback": true
+    },
+    {
+      "index": 4,
+      "pages": [
+        13,
+        14,
+        15,
+        16
+      ],
+      "fact_count": 0,
+      "fallback": true
+    },
+    {
+      "index": 5,
+      "pages": [
+        17,
+        18,
+        19,
+        20
+      ],
+      "fact_count": 0,
+      "fallback": true
+    },
+    {
+      "index": 6,
+      "pages": [
+        21,
+        22,
+        23,
+        24
+      ],
+      "fact_count": 0,
+      "fallback": true
+    },
+    {
+      "index": 7,
+      "pages": [
+        25,
+        26,
+        27,
+        28
+      ],
+      "fact_count": 10,
+      "fallback": false
+    },
+    {
+      "index": 8,
+      "pages": [
+        29,
+        30,
+        31,
+        32
+      ],
+      "fact_count": 0,
+      "fallback": true
+    },
+    {
+      "index": 9,
+      "pages": [
+        33,
+        34,
+        35,
+        36
+      ],
+      "fact_count": 3,
+      "fallback": false
+    },
+    {
+      "index": 10,
+      "pages": [
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45
+      ],
+      "fact_count": 0,
+      "fallback": true
+    },
+    {
+      "index": 11,
+      "pages": [
+        46,
+        47,
+        48,
+        49,
+        50
+      ],
+      "fact_count": 2,
+      "fallback": false
+    }
+  ],
+  "validation": [
+    {
+      "attempt": 0,
+      "errors": []
+    }
+  ],
+  "quality_checks": [
+    {
+      "checked": [
+        "objects_metrics",
+        "strength",
+        "negative_claims",
+        "core_coverage",
+        "boundaries",
+        "expression"
+      ],
+      "issues": [
+        {
+          "category": "coverage",
+          "article_quote": "RNA在细胞内复制时会产生双链RNA中间体，即由两条RNA链配对形成的分子。",
+          "evidence_quote": "During the RNA self-amplification process, dsRNA intermediates are typically produced that elicit robust immune activation, specifically, type I interferon responses via the activation of various cellular RNA sensors15.",
+          "reason": "“从RNA设计到免疫反应”一节介绍了双链RNA中间体，却遗漏了证据明确给出的后续过程：它会激活细胞内的RNA传感器，引发I型干扰素反应。缺少这一环节，读者难以理解为什么这里要介绍双链RNA，以及它与免疫激活有什么联系。",
+          "suggestion": "在双链RNA的解释后，补充其通过激活细胞内识别RNA的传感器，引发I型干扰素这一类免疫反应。补充范围限于该引文支持的机制，不据此延伸到蛋白产量或耐受性的变化。"
+        }
+      ],
+      "quotes_verified": true,
+      "attempt": 0,
+      "status": "checked",
+      "article_fingerprint": "6585863cf7e25d67"
+    },
+    {
+      "checked": [
+        "objects_metrics",
+        "strength",
+        "negative_claims",
+        "core_coverage",
+        "boundaries",
+        "expression"
+      ],
+      "issues": [
+        {
+          "category": "accuracy",
+          "article_quote": "综述指出，离子化脂质是一类可随环境酸碱度改变所带电荷的脂质：在生理pH下不带电，在酸化的内体中转为带正电。内体是细胞内运输物质的膜性囊泡。离子化脂质可通过破坏内体膜，帮助mRNA释放到细胞质中，也具有较强的佐剂活性，即能增强免疫反应。",
+          "evidence_quote": "Ionizable lipids are uncharged at physiological pH, which makes them safer compared to the permanently positively charged alternatives. They facilitate cellular uptake of the mRNA and release of the nucleic acid cargo from the endosomes to the cytosol via the disruption of the en",
+          "reason": "本轮引文支持离子化脂质在生理pH下不带电，以及促进mRNA摄取和核酸货物从内体释放到细胞质；但引文末尾被截断，没有提供“在酸化的内体中转为带正电”和“具有较强的佐剂活性”的证据。这属于本轮引文抽取缺失，不能依据中文claim将这两项表述视为已核验，也不能据此判断原文没有交代。",
+          "suggestion": "将相关表述收窄为本轮引文可核验的内容：离子化脂质在生理pH下不带电，并可促进细胞摄取mRNA及核酸货物从内体释放到细胞质。关于酸化后电荷变化和佐剂活性的表述，需补充完整引文后再保留。"
+        },
+        {
+          "category": "accuracy",
+          "article_quote": "有的研究观察到肌细胞参与，有的则未观察到；综述指出，差异可能与LNP配方、细胞分析方案或mRNA平台有关。",
+          "evidence_quote": "While uptake of mRNA-LNP and expression of protein in myocytes has been reported in some studies, others have shown absence of involvement of myocytes. Early studies with saRNA identified muscle cells as the main type of cell expressing and presenting antigen82. The observed diff",
+          "reason": "本轮引文明确支持不同研究对肌细胞是否参与的报告不一致，但在开始讨论差异时即被截断，未包含LNP配方、细胞分析方案或mRNA平台这三项可能解释。中文claim中的概括不能替代缺失的引文证据，因此该归因目前无法核验；这不等于原文未作解释。",
+          "suggestion": "保留“有的研究观察到肌细胞参与，有的则未观察到”，删除三项可能原因，或在补充包含这些原因的完整引文后再保留。"
+        }
+      ],
+      "quotes_verified": true,
+      "attempt": 1,
+      "status": "unresolved",
+      "article_fingerprint": "dcc10c3542ca569c",
+      "unresolved_issues": [
+        {
+          "category": "accuracy",
+          "article_quote": "综述指出，离子化脂质是一类可随环境酸碱度改变所带电荷的脂质：在生理pH下不带电，在酸化的内体中转为带正电。内体是细胞内运输物质的膜性囊泡。离子化脂质可通过破坏内体膜，帮助mRNA释放到细胞质中，也具有较强的佐剂活性，即能增强免疫反应。",
+          "evidence_quote": "Ionizable lipids are uncharged at physiological pH, which makes them safer compared to the permanently positively charged alternatives. They facilitate cellular uptake of the mRNA and release of the nucleic acid cargo from the endosomes to the cytosol via the disruption of the en",
+          "reason": "本轮引文支持离子化脂质在生理pH下不带电，以及促进mRNA摄取和核酸货物从内体释放到细胞质；但引文末尾被截断，没有提供“在酸化的内体中转为带正电”和“具有较强的佐剂活性”的证据。这属于本轮引文抽取缺失，不能依据中文claim将这两项表述视为已核验，也不能据此判断原文没有交代。",
+          "suggestion": "将相关表述收窄为本轮引文可核验的内容：离子化脂质在生理pH下不带电，并可促进细胞摄取mRNA及核酸货物从内体释放到细胞质。关于酸化后电荷变化和佐剂活性的表述，需补充完整引文后再保留。"
+        },
+        {
+          "category": "accuracy",
+          "article_quote": "有的研究观察到肌细胞参与，有的则未观察到；综述指出，差异可能与LNP配方、细胞分析方案或mRNA平台有关。",
+          "evidence_quote": "While uptake of mRNA-LNP and expression of protein in myocytes has been reported in some studies, others have shown absence of involvement of myocytes. Early studies with saRNA identified muscle cells as the main type of cell expressing and presenting antigen82. The observed diff",
+          "reason": "本轮引文明确支持不同研究对肌细胞是否参与的报告不一致，但在开始讨论差异时即被截断，未包含LNP配方、细胞分析方案或mRNA平台这三项可能解释。中文claim中的概括不能替代缺失的引文证据，因此该归因目前无法核验；这不等于原文未作解释。",
+          "suggestion": "保留“有的研究观察到肌细胞参与，有的则未观察到”，删除三项可能原因，或在补充包含这些原因的完整引文后再保留。"
+        }
+      ]
+    },
+    {
+      "checked": [
+        "objects_metrics",
+        "strength",
+        "negative_claims",
+        "core_coverage",
+        "boundaries",
+        "expression"
+      ],
+      "issues": [
+        {
+          "category": "coverage",
+          "article_quote": "这些中间体会激活细胞内识别RNA的传感器，进而引发I型干扰素反应。I型干扰素是一类参与免疫应答的信号蛋白，这一过程把RNA扩增与免疫激活联系起来。",
+          "evidence_quote": "The robust inflammatory response is beneficial for immune cell activation but limits protein production from the saRNA and decreases tolerability.",
+          "reason": "文章介绍了自扩增过程引发免疫激活，却遗漏了同一炎症反应会限制自扩增RNA的蛋白质产量并降低耐受性的结论。这使该机制只呈现了促进免疫激活的一面，未保留原文明确指出的权衡。",
+          "suggestion": "在机制介绍后补充：这种强烈的炎症反应有助于激活免疫细胞，但也会限制自扩增RNA的蛋白质产量，并降低耐受性。"
+        }
+      ],
+      "quotes_verified": true,
+      "attempt": 0,
+      "status": "checked",
+      "article_fingerprint": "54a750cc523f900f"
+    },
+    {
+      "checked": [
+        "objects_metrics",
+        "strength",
+        "negative_claims",
+        "core_coverage",
+        "boundaries",
+        "expression"
+      ],
+      "issues": [],
+      "quotes_verified": true,
+      "attempt": 1,
+      "status": "checked",
+      "article_fingerprint": "2ff477c5925f451e"
+    }
+  ],
+  "quality_check_enabled": true,
+  "fact_errors": [
+    {
+      "chunk": 1,
+      "error": "调用失败（已重试 2 次）：ReadTimeout"
+    },
+    {
+      "chunk": 3,
+      "error": "调用失败（已重试 2 次）：ReadTimeout"
+    },
+    {
+      "chunk": 4,
+      "error": "调用失败（已重试 2 次）：ReadTimeout"
+    },
+    {
+      "chunk": 5,
+      "error": "调用失败（已重试 2 次）：ReadTimeout"
+    },
+    {
+      "chunk": 6,
+      "error": "调用失败（已重试 2 次）：ReadTimeout"
+    },
+    {
+      "chunk": 10,
+      "error": "调用失败（已重试 2 次）：ReadTimeout"
+    }
+  ],
+  "rejected_facts": [
+    {
+      "chunk": 2,
+      "count": 6,
+      "examples": [
+        "事实字段value不是原句中的摘录",
+        "事实字段metric不是原句中的摘录",
+        "事实引文在当前片段第6页找不到，不接受编造或跨页拼接证据"
+      ]
+    },
+    {
+      "chunk": 5,
+      "count": 9,
+      "examples": [
+        "事实字段metric不是原句中的摘录",
+        "事实引文在当前片段第17页找不到，不接受编造或跨页拼接证据",
+        "事实字段metric不是原句中的摘录"
+      ]
+    },
+    {
+      "chunk": 11,
+      "count": 2,
+      "examples": [
+        "事实字段subject不是原句中的摘录",
+        "事实字段metric不是原句中的摘录"
+      ]
+    }
+  ],
+  "fallback_errors": [
+    {
+      "chunk": 10,
+      "error": "调用失败（已重试 2 次）：ReadTimeout"
+    }
+  ],
+  "quality_scope": "核查范围为生成使用的已验证原句事实记录；简要提炼片段仅作写作线索，未覆盖全文，不保证科学正确性。"
+}

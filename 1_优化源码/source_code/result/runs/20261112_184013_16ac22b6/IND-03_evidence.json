@@ -1,0 +1,682 @@
+{
+  "document_type": "review",
+  "facts": [
+    {
+      "page": 1,
+      "kind": "background",
+      "claim": "综述将数字孪生定义为能够实时、高精度反映物理对象或系统状态与行为的虚拟副本，并概括其在智能产业中的功能。",
+      "quote": "A digital twin (DT) is a real-time, highly accurate, virtual replica that reflects the states and behaviours of physical objects or systems. DTs can enable monitoring, simulation, prediction, optimisation as well as the structured integration of technologies, data flows and functional processes within smart industries.",
+      "subject": "A digital twin (DT)",
+      "metric": "",
+      "value": "real-time, highly accurate",
+      "unit": "",
+      "condition": "within smart industries",
+      "strength": "can enable",
+      "id": "C001-F01",
+      "quote_verified": true
+    },
+    {
+      "page": 1,
+      "kind": "method",
+      "claim": "综述识别了30种对数字孪生研究有重要贡献的领先期刊，并从中选取《Computers in Industry》期刊自2018年至今的相关论文进行分类分析。",
+      "quote": "We have identified 30 leading journals that have significantly contributed to DT research, with the Computers in Industry (CII) journal ranking second among these 30 journals with more than 80 related publications. After briefly discussing the key concepts and major milestones around the development and rapid adoption of DTs in smart industries, we focus on reviewing and analysing the DT publications from the CII journal from 2018 to present by systematically categorising them into four primary application domains: manufacturing, construction, transportation, and technologies and paradigms.",
+      "subject": "the Computers in Industry (CII) journal",
+      "metric": "related publications",
+      "value": "more than 80",
+      "unit": "",
+      "condition": "among these 30 journals",
+      "strength": "ranking second",
+      "id": "C001-F02",
+      "quote_verified": true
+    },
+    {
+      "page": 2,
+      "kind": "method",
+      "claim": "研究提出两个问题：数字孪生发展的基础概念、关键过程和里程碑是什么，以及当前研究趋势与潜在研究方向是什么；并选取《Computers in Industry》作为代表性领先期刊开展详细文献综述。",
+      "quote": "Accordingly, our study addresses two primary research questions. First, what are the foundational concepts, key processes and milestones that have shaped the development of DTs? Second, what are the current trends and research potential in DT research? We have identified influential journals and selected Computers in Industry (CII) as a representative leading journal for a detailed literature review.",
+      "subject": "our study",
+      "metric": "primary research questions",
+      "value": "two",
+      "unit": "",
+      "condition": "selected Computers in Industry (CII) as a representative leading journal",
+      "strength": "primary",
+      "id": "C001-F05",
+      "quote_verified": true
+    },
+    {
+      "page": 2,
+      "kind": "background",
+      "claim": "数字孪生旨在通过模拟物理实体在不同情境下的行为、特征和性能，为实体、过程、系统或环境建立精确、动态、实时的虚拟副本。",
+      "quote": "The goal of a DT is to create a precise, dynamic and real-time virtual replica of a physical entity, process, system or environment by simulating behaviours, characteristics and performance of a physical entity under various scenarios (Tao et al., 2022).",
+      "subject": "a DT",
+      "metric": "",
+      "value": "precise, dynamic and real-time",
+      "unit": "",
+      "condition": "under various scenarios",
+      "strength": "precise",
+      "id": "C001-F06",
+      "quote_verified": true
+    },
+    {
+      "page": 2,
+      "kind": "finding",
+      "claim": "随着数字孪生应用扩展到原有工业和制造业领域之外，其定义和范围也变得更加灵活；例如，虚拟实体可以尚无实体对应物。",
+      "quote": "It should be noted that, as the use of DTs has expanded beyond the original industrial and manufacturing sectors, the definition and scope of a DT has also become more flexible. For example, Verdouw et al. (2021) defined an “Imaginary DT”, where the physical counterpart of the digital entity does not yet exist (such as designed, but not yet an existing object).",
+      "subject": "the definition and scope of a DT",
+      "metric": "",
+      "value": "more flexible",
+      "unit": "",
+      "condition": "as the use of DTs has expanded beyond the original industrial and manufacturing sectors",
+      "strength": "more flexible",
+      "id": "C001-F07",
+      "quote_verified": true
+    },
+    {
+      "page": 2,
+      "kind": "limitation",
+      "claim": "数字孪生的精度受输入数据质量、模型复杂程度和计算能力等因素影响；不确定性和数据不完整仍可能限制精度。",
+      "quote": "The accuracy of a DT depends on several factors, which include the quality of input data, the sophistication of the models and the computational power. Some DT models are simplified and primarily used for strategic planning, lacking the ability to capture every nuance of the physical system. In contrast, other DT models used in fields like aerospace or nuclear power are highly detailed and precise due to the critical need for accuracy. While continuous data updates improve fidelity over time, uncertainties and incomplete data can still limit their precision.",
+      "subject": "The accuracy of a DT",
+      "metric": "accuracy",
+      "value": "",
+      "unit": "",
+      "condition": "uncertainties and incomplete data",
+      "strength": "can still limit",
+      "id": "C001-F10",
+      "quote_verified": true
+    },
+    {
+      "page": 7,
+      "kind": "finding",
+      "claim": "Snitch Digital Twin通过刻画工业系统中不同行为之间的关系，并利用滑动时间窗提取的时空特征，改善异常检测；材料称该方法能减少误报，并更细致地表征动态环境中的异常行为。",
+      "quote": "The proposed methodology is effective in reducing false positives and providing a more nuanced characterisation of anomalous behaviours in dynamic environments.",
+      "subject": "The proposed methodology",
+      "metric": "false positives",
+      "value": "",
+      "unit": "",
+      "condition": "in dynamic environments",
+      "strength": "is effective",
+      "id": "C003-F02",
+      "quote_verified": true
+    },
+    {
+      "page": 7,
+      "kind": "finding",
+      "claim": "综述指出，数字孪生模型的准确性是实现预期收益的基础；制造业中的在线验证方法利用物理系统与虚拟系统之间的相似性支持模型准确性和短期决策。",
+      "quote": "Ensuring the accuracy of DT models is foundational to realising their intended benefits. Lugaresi et al. (2023) introduced a novel approach for online validation of DT in manufacturing, utilising similarity measures between physical and virtual systems to ensure model accuracy and support short-term decision-making in dynamic production environments.",
+      "subject": "DT models",
+      "metric": "similarity measures",
+      "value": "",
+      "unit": "",
+      "condition": "in dynamic production environments",
+      "strength": "foundational",
+      "id": "C003-F03",
+      "quote_verified": true
+    },
+    {
+      "page": 7,
+      "kind": "limitation",
+      "claim": "现有研究主要优化生产过程中的单个阶段或有限区域，模型跨制造流程或行业的泛化能力仍需进一步验证；数字孪生的实时响应和与其他系统的集成也需要改进。",
+      "quote": "Current research on DT technology primarily focuses on optimising individual stages or limited areas of the production process. However, the generalisation capability of these models across different manufacturing processes or industries still requires further validation. Additionally, the real-time responsiveness of DT and its integration with other systems require further improvement.",
+      "subject": "these models",
+      "metric": "generalisation capability",
+      "value": "",
+      "unit": "",
+      "condition": "across different manufacturing processes or industries",
+      "strength": "still requires further validation",
+      "id": "C003-F04",
+      "quote_verified": true
+    },
+    {
+      "page": 8,
+      "kind": "limitation",
+      "claim": "多子系统和设备集成对系统响应速度的影响尚未得到充分研究，尤其是复杂工业环境下的实时性能。",
+      "quote": "The potential impact of integrating multiple subsystems and devices on system response speed has also not been thoroughly investigated, particularly regarding real-time performance in complex industrial environments.",
+      "subject": "The potential impact of integrating multiple subsystems and devices",
+      "metric": "system response speed",
+      "value": "",
+      "unit": "",
+      "condition": "in complex industrial environments",
+      "strength": "not been thoroughly investigated",
+      "id": "C003-F05",
+      "quote_verified": true
+    },
+    {
+      "page": 8,
+      "kind": "finding",
+      "claim": "流体回路图数字化方法通过目标检测和图像处理提取符号与连接关系，再转换为数字格式以构建流体系统数字孪生；该方法对高质量图像效果较好，可减少人工工作并加快数字化。",
+      "quote": "It is particularly effective for high-quality images, significantly reducing manual efforts and speeding up the digitalisation process.",
+      "subject": "It",
+      "metric": "manual efforts",
+      "value": "",
+      "unit": "",
+      "condition": "for high-quality images",
+      "strength": "particularly effective",
+      "id": "C003-F06",
+      "quote_verified": true
+    },
+    {
+      "page": 8,
+      "kind": "limitation",
+      "claim": "流体回路图数字化方法处理更复杂的低质量图像或非标准化图表的能力尚未得到充分探索。",
+      "quote": "The capability to handle more complex low-quality images or non-standardised charts has not been thoroughly explored.",
+      "subject": "The capability",
+      "metric": "handle more complex low-quality images or non-standardised charts",
+      "value": "",
+      "unit": "",
+      "condition": "",
+      "strength": "has not been thoroughly explored",
+      "id": "C003-F07",
+      "quote_verified": true
+    },
+    {
+      "page": 8,
+      "kind": "limitation",
+      "claim": "在数据稀缺或质量较低的环境中，数据驱动数字孪生系统的有效性和稳健性可能受到影响。",
+      "quote": "In environments with scarce or low-quality data, the effectiveness and robustness of the system may be compromised.",
+      "subject": "the system",
+      "metric": "effectiveness and robustness",
+      "value": "",
+      "unit": "",
+      "condition": "In environments with scarce or low-quality data",
+      "strength": "may be compromised",
+      "id": "C003-F08",
+      "quote_verified": true
+    },
+    {
+      "page": 9,
+      "kind": "example",
+      "claim": "一项滚动轴承故障检测数字孪生研究仅使用健康数据，并指出其在噪声或实时环境中的表现仍需验证。",
+      "quote": "Zhang et al. (2025) proposed a gradient fusion DT for rolling bearing fault detection using only healthy data, effectively addressing label scarcity; however, its performance in noisy or real-time environments remains to be validated.",
+      "subject": "a gradient fusion DT",
+      "metric": "performance",
+      "value": "",
+      "unit": "",
+      "condition": "in noisy or real-time environments",
+      "strength": "remains to be validated",
+      "id": "C004-F05",
+      "quote_verified": true
+    },
+    {
+      "page": 9,
+      "kind": "limitation",
+      "claim": "现有数字孪生模型难以在实时处理中完整捕捉金属增材制造中的复杂物理和化学反应。",
+      "quote": "The complex physical and chemical reactions in the additive manufacturing process are difficult to fully capture in real time using existing DT models.",
+      "subject": "The complex physical and chemical reactions in the additive manufacturing process",
+      "metric": "",
+      "value": "",
+      "unit": "",
+      "condition": "in real time using existing DT models",
+      "strength": "difficult to fully capture",
+      "id": "C004-F07",
+      "quote_verified": true
+    },
+    {
+      "page": 10,
+      "kind": "example",
+      "claim": "一项沉浸式数字孪生平台结合增强现实和扫描到建筑信息模型技术，用于桥梁损伤实时评估和模型更新，以增强结构监测和决策。",
+      "quote": "Fawad et al. (2025) developed an immersive DT platform combining Augmented Reality (AR) and Scan-to-Building Information Modelling (BIM) for real-time bridge damage assessment and model updates, enhancing structural monitoring and decision-making.",
+      "subject": "an immersive DT platform",
+      "metric": "bridge damage assessment and model updates",
+      "value": "",
+      "unit": "",
+      "condition": "for real-time",
+      "strength": "enhancing",
+      "id": "C004-F10",
+      "quote_verified": true
+    },
+    {
+      "page": 10,
+      "kind": "limitation",
+      "claim": "该桥梁监测平台依赖数据质量；对不完整或低质量扫描数据的处理仍需进一步探索，其在更复杂桥梁和基础设施环境中的可扩展性与适应性也尚未验证。",
+      "quote": "Although the platform has demonstrated efficiency in structural monitoring, it is highly dependent on data quality. Further exploration is needed on how to handle incomplete or low-quality scan data. Additionally, the scalability and adaptability of the platform have yet to be validated in more complex bridge and infrastructure environments.",
+      "subject": "the platform",
+      "metric": "scalability and adaptability",
+      "value": "",
+      "unit": "",
+      "condition": "in more complex bridge and infrastructure environments",
+      "strength": "have yet to be validated",
+      "id": "C004-F11",
+      "quote_verified": true
+    },
+    {
+      "page": 11,
+      "kind": "finding",
+      "claim": "综述称，CII期刊发表了3篇与交通领域数字孪生应用相关的文章，涉及铁路预测性维护、铁路轨道重建和货运停车管理。",
+      "quote": "The CII journal has published only 3 articles related to DT use in the transportation sector, as outlined in Table 4.",
+      "subject": "The CII journal",
+      "metric": "articles related to DT use in the transportation sector",
+      "value": "3",
+      "unit": "articles",
+      "condition": "in the transportation sector",
+      "strength": "only",
+      "id": "C005-F01",
+      "quote_verified": true
+    },
+    {
+      "page": 11,
+      "kind": "example",
+      "claim": "巴黎的真实案例研究显示，认知数字孪生框架在提升物流效率、减少交通外部影响和更好利用城市资源方面具有潜力。",
+      "quote": "A real-world case study conducted in Paris demonstrated the potential of CDT in improving logistics efficiency, reducing traffic externalities, and better utilising urban resources.",
+      "subject": "A real-world case study conducted in Paris",
+      "metric": "improving logistics efficiency, reducing traffic externalities, and better utilising urban resources",
+      "value": "",
+      "unit": "",
+      "condition": "in Paris",
+      "strength": "demonstrated the potential",
+      "id": "C005-F02",
+      "quote_verified": true
+    },
+    {
+      "page": 11,
+      "kind": "limitation",
+      "claim": "铁路预测性维护系统依赖传感器数据质量；在恶劣环境或数据缺失时的准确性和稳健性仍需进一步研究和改进。",
+      "quote": "The system was highly dependent on sensor data quality, particularly in harsh environments or when data is missing. Ensuring system accuracy and robustness under such conditions requires further research and improvement.",
+      "subject": "The system",
+      "metric": "system accuracy and robustness",
+      "value": "",
+      "unit": "",
+      "condition": "particularly in harsh environments or when data is missing",
+      "strength": "requires further research and improvement",
+      "id": "C005-F03",
+      "quote_verified": true
+    },
+    {
+      "page": 11,
+      "kind": "finding",
+      "claim": "综述认为，交通领域的数字孪生应用显示出用于预测性维护、智能巡检和物流协调的潜力，可望改善运营效率和资产可靠性。",
+      "quote": "DT applications in transportation have shown considerable promise in predictive maintenance, intelligent inspection, and logistics coordination. These efforts highlighted the potential to improve operational efficiency and asset reliability.",
+      "subject": "DT applications in transportation",
+      "metric": "operational efficiency and asset reliability",
+      "value": "",
+      "unit": "",
+      "condition": "in transportation",
+      "strength": "shown considerable promise",
+      "id": "C005-F04",
+      "quote_verified": true
+    },
+    {
+      "page": 11,
+      "kind": "limitation",
+      "claim": "交通领域研究依赖理想数据条件且验证规模有限，降低了其在真实环境中的稳健性；处理噪声或稀疏数据、互操作性及适应复杂动态交通系统仍是挑战。",
+      "quote": "However, the studies relied on ideal data conditions and limited-scale validations, reducing their robustness in real-world environments. Challenges remain in handling noisy or sparse data, ensuring interoperability and adapting to complex, dynamic transport systems.",
+      "subject": "the studies",
+      "metric": "their robustness",
+      "value": "",
+      "unit": "",
+      "condition": "in real-world environments",
+      "strength": "Challenges remain",
+      "id": "C005-F05",
+      "quote_verified": true
+    },
+    {
+      "page": 12,
+      "kind": "finding",
+      "claim": "综述指出，语义互操作性和模块化设计研究提升了数字孪生的灵活性与互操作性。",
+      "quote": "Research on semantic interoperability and modular design has enhanced the flexibility and interoperability of DT.",
+      "subject": "Research on semantic interoperability and modular design",
+      "metric": "the flexibility and interoperability of DT",
+      "value": "",
+      "unit": "",
+      "condition": "",
+      "strength": "has enhanced",
+      "id": "C005-F07",
+      "quote_verified": true
+    },
+    {
+      "page": 12,
+      "kind": "limitation",
+      "claim": "跨行业应用和复杂多系统集成中的可扩展性、数据一致性及实际可操作性仍需进一步验证和优化。",
+      "quote": "However, scalability, data consistency, and practical operability in cross-industry applications and complex multi-system integration still require further validation and optimisation.",
+      "subject": "scalability, data consistency, and practical operability",
+      "metric": "further validation and optimisation",
+      "value": "",
+      "unit": "",
+      "condition": "in cross-industry applications and complex multi-system integration",
+      "strength": "still require",
+      "id": "C005-F08",
+      "quote_verified": true
+    },
+    {
+      "page": 12,
+      "kind": "finding",
+      "claim": "综述称，模块化设计和智能治理已在航空、智慧城市和供应链管理等领域显示出灵活性。",
+      "quote": "These studies have shown the flexibility of modular design and intelligent governance in domains like aviation, smart cities and supply chain management.",
+      "subject": "These studies",
+      "metric": "the flexibility of modular design and intelligent governance",
+      "value": "",
+      "unit": "",
+      "condition": "in domains like aviation, smart cities and supply chain management",
+      "strength": "have shown",
+      "id": "C005-F09",
+      "quote_verified": true
+    },
+    {
+      "page": 12,
+      "kind": "limitation",
+      "claim": "在大型系统复杂性、利益相关方协调和实时数据治理方面仍有挑战；处理多层不确定性和动态变化时，实证研究和综合解决方案尤其不足。",
+      "quote": "However, challenges persist in handling large-scale system complexity, stakeholder coordination and real-time data governance. The lack of empirical research and comprehensive solutions is especially evident when dealing with multi-level uncertainty and dynamic changes in these scenarios.",
+      "subject": "challenges",
+      "metric": "large-scale system complexity, stakeholder coordination and real-time data governance",
+      "value": "",
+      "unit": "",
+      "condition": "when dealing with multi-level uncertainty and dynamic changes in these scenarios",
+      "strength": "challenges persist",
+      "id": "C005-F10",
+      "quote_verified": true
+    },
+    {
+      "page": 14,
+      "kind": "background",
+      "claim": "数字孪生（DT）通过虚拟世界与物理世界的动态、实时交互，持续提供有关实体资产全生命周期性能的数据，并随实体资产变化而调整。",
+      "quote": "DT technology enables dynamic, real-time interaction between the virtual and physical worlds, providing a continuous stream of data that offers valuable insights into the physical asset’s performance throughout its lifecycle. By dynamically adapting to the evolving physical asset, DTs support long-term sustainability, continuously reflecting changes.",
+      "subject": "DT technology",
+      "metric": "physical asset’s performance throughout its lifecycle",
+      "value": "",
+      "unit": "",
+      "condition": "By dynamically adapting to the evolving physical asset",
+      "strength": "enables",
+      "id": "C006-F01",
+      "quote_verified": true
+    },
+    {
+      "page": 13,
+      "kind": "limitation",
+      "claim": "数字孪生仍面临实时数据处理、多源数据整合，以及复杂、动态工业环境中系统灵活性与一致性的挑战。数字孪生与人工智能的融合虽然增强了自动化，但计算复杂度与实时响应之间的平衡，以及模型可解释性仍需进一步研究。",
+      "quote": "However, challenges remain in real-time data pro-\ncessing, multi-source data integration as well as ensuring system flexi-\nbility and consistency in complex and dynamic industrial environments. \nAdditionally, while the integration of DT with AI enhances automation, \nbalancing computational complexity with real-time responsiveness and \nensuring model interpretability requires further investigation.",
+      "subject": "the integration of DT with AI",
+      "metric": "computational complexity",
+      "value": "",
+      "unit": "",
+      "condition": "in complex and dynamic industrial environments",
+      "strength": "requires further investigation",
+      "id": "C006-F02",
+      "quote_verified": true
+    },
+    {
+      "page": 13,
+      "kind": "example",
+      "claim": "ENIGMA是面向信息系统与物理系统相结合场景的数字孪生安全方案，将可解释人工智能与游戏化方式结合，用于增强分析人员的网络安全培训；其通过游戏化攻防场景及解释人工智能决策的方法，提高决策透明度与可信度。",
+      "quote": "Suhail et al. (2023) introduced ENIGMA, an AI-driven \nsecurity solution for DT use in cyber-physical systems, which com-\nbines eXplainable AI and gamification to enhance cybersecurity training \nfor analysts. The framework leverages gamified attack-defence sce-\nnarios, making AI-driven decisions more transparent and trustworthy \nthrough the use of Shapley Additive Explanations values.",
+      "subject": "ENIGMA",
+      "metric": "cybersecurity training",
+      "value": "",
+      "unit": "",
+      "condition": "for DT use in cyber-physical systems",
+      "strength": "to enhance",
+      "id": "C006-F03",
+      "quote_verified": true
+    },
+    {
+      "page": 13,
+      "kind": "limitation",
+      "claim": "不同领域对数字孪生的需求与定义存在差异，使标准化互操作——让不同系统按统一规则协同工作——难以实现。已有标准化框架和分类方法在跨行业应用中的普适性与一致性仍缺乏充分验证。",
+      "quote": "The varying demands and definitions of DT across different fields \nmake it challenging to achieve standardised interoperability. Although \nexisting research has proposed standardisation frameworks and classi-\nfication methods for DTs, their universality and consistency in \ncross-industry applications remain insufficiently validated.",
+      "subject": "standardisation frameworks and classi-\nfication methods for DTs",
+      "metric": "their universality and consistency",
+      "value": "",
+      "unit": "",
+      "condition": "in \ncross-industry applications",
+      "strength": "remain insufficiently validated",
+      "id": "C006-F04",
+      "quote_verified": true
+    },
+    {
+      "page": 13,
+      "kind": "finding",
+      "claim": "综述认为，数字孪生在系统架构、自主智能和生命周期管理中的应用，有望改善决策与系统协调；但多数框架尚未经过大规模检验，高计算需求、跨平台整合困难及人工智能组件解释能力有限，阻碍了实际部署。",
+      "quote": "DT applications in system architectures, autonomous intelligence, \nand lifecycle management have shown considerable promise in \nenhancing decision-making and system coordination. While these \nframeworks lay a strong theoretical foundation, most remain untested at \nscale. Key challenges include high computational demand, cross- \nplatform integration difficulties, and limited explainability of AI- \ndriven components, all of which hinder practical deployment.",
+      "subject": "DT applications in system architectures, autonomous intelligence, \nand lifecycle management",
+      "metric": "decision-making and system coordination",
+      "value": "",
+      "unit": "",
+      "condition": "in system architectures, autonomous intelligence, \nand lifecycle management",
+      "strength": "have shown considerable promise",
+      "id": "C006-F05",
+      "quote_verified": true
+    },
+    {
+      "page": 13,
+      "kind": "example",
+      "claim": "企业应用实例包括：西门子、达索和ABB通过三维建模、设备监测与虚拟测试等技术，拓展数字孪生在缩短研发周期和提高产品质量方面的应用；霍尼韦尔用其简化航空发动机维护并预测性能；联合包裹服务公司将数字孪生与实时分析结合，用于复杂物流管理。",
+      "quote": "Moreover, Siemens, Dassault and ABB have \nexpanded DT use in reducing research and development cycles and \nimproving product quality with techniques like 3D modelling, equip-\nment monitoring and virtual testing. Honeywell’s DT model streamlines \naero-engine maintenance and predicts engine performance. United \nParcel Service implemented DT technology with real-time analytics to \nmanage its complex logistics.",
+      "subject": "Siemens, Dassault and ABB",
+      "metric": "research and development cycles",
+      "value": "",
+      "unit": "",
+      "condition": "with techniques like 3D modelling, equip-\nment monitoring and virtual testing",
+      "strength": "have \nexpanded",
+      "id": "C006-F06",
+      "quote_verified": true
+    },
+    {
+      "page": 14,
+      "kind": "example",
+      "claim": "意大利初创企业Quick Algorithm开发了基于人工智能的计算机化维护管理系统，通过汇集制造数据构建数字孪生以改善工厂管理，并通过整合物联网方案——让设备联网提供数据的方案——支持异常识别、能耗分析和成本降低。",
+      "quote": "Quick Al-\ngorithm, an Italian startup, has developed an AI-based computerised \nmaintenance management system. This system aggregates \nmanufacturing data to develop a DT, enhancing plant management. It \nalso enables anomaly identification, energy consumption analysis and \ncost reduction by integrating IoT-based solutions.",
+      "subject": "This system",
+      "metric": "anomaly identification, energy consumption analysis and \ncost reduction",
+      "value": "",
+      "unit": "",
+      "condition": "by integrating IoT-based solutions",
+      "strength": "enables",
+      "id": "C006-F07",
+      "quote_verified": true
+    },
+    {
+      "page": 14,
+      "kind": "method",
+      "claim": "本节围绕数字孪生在工业中的应用讨论研究机会，将其分为生命周期管理、跨学科融合、人机协作和数字孪生驱动的智能产业四类。",
+      "quote": "In this section, we identify and discuss some research opportunities \nregarding the application of DTs in the industry. This discussion is \norganised along four broad categories: lifecycle management, cross- \ndisciplinary integration, human-machine collaboration and DT-driven \nsmart industries.",
+      "subject": "This discussion",
+      "metric": "four broad categories",
+      "value": "four",
+      "unit": "",
+      "condition": "regarding the application of DTs in the industry",
+      "strength": "",
+      "id": "C006-F08",
+      "quote_verified": true
+    },
+    {
+      "page": 14,
+      "kind": "finding",
+      "claim": "综述指出，多数现有研究主要将数字孪生用于单一功能或阶段，例如在设计与创新阶段利用虚拟环境测试和调整参数；将功能及应用扩展至整个产品生命周期，是发挥其潜力的重要研究机会。",
+      "quote": "In most existing studies, the application of DTs has primarily focused \non a single function or phase, such as design and innovation, where it is \nused to test and adjust parameters in a virtual environment. To fully \nrealise the potential of DTs, a key research opportunity lies in broad-\nening its functionalities and extending its application across the entire \nproduct lifecycle (Melesse et al., 2020).",
+      "subject": "the application of DTs",
+      "metric": "a single function or phase",
+      "value": "",
+      "unit": "",
+      "condition": "In most existing studies",
+      "strength": "has primarily focused",
+      "id": "C006-F09",
+      "quote_verified": true
+    },
+    {
+      "page": 14,
+      "kind": "finding",
+      "claim": "不同生命周期阶段的主要用途有所不同：设计阶段侧重在虚拟环境中实现成本效益较好的设计；制造阶段侧重优化资源管理和生产流程；运行阶段侧重通过实时监测、数据分析及预测性维护提高质量与可靠性，并支持远程诊断和依据用户反馈持续优化。预测性维护指利用相关信息预判维护需求。",
+      "quote": "In the design stage, the DT primarily fa-\ncilitates cost-effective design in a virtual environment. In the \nmanufacturing stage, the DT primarily optimises resource management \nand production processes to ensure efficient production and reduce \nproduction costs. In the operational stage, the DT is predominantly used \nto enhance quality and reliability through real-time monitoring, data \nanalysis and predictive maintenance, while supporting remote di-\nagnostics and continuous optimisation based on user feedback.",
+      "subject": "the DT",
+      "metric": "quality and reliability",
+      "value": "",
+      "unit": "",
+      "condition": "In the operational stage",
+      "strength": "is predominantly used",
+      "id": "C006-F10",
+      "quote_verified": true
+    },
+    {
+      "page": 15,
+      "kind": "finding",
+      "claim": "综述将跨学科融合视为推动数字孪生成熟的重要研究机会，并认为除技术融合外，工程、计算机科学和管理学之间的协作同样重要；这些学科分别贡献系统设计、算法开发、组织实施和战略协调等专长，这种协作可以加快开发能够应对现实复杂性的数字孪生系统。",
+      "quote": "In addition to technological integration, interdisciplinary collaboration \namong engineering, computer science, and management disciplines is \nequally important. Each discipline contributes unique expertise—from \nsystem-level engineering design and algorithm development to organ-\nisational implementation and strategic alignment. Fostering such \ncollaboration can accelerate the development of robust, scalable, and \ncontext-aware DT systems that address real-world complexity.",
+      "subject": "interdisciplinary collaboration \namong engineering, computer science, and management disciplines",
+      "metric": "the development of robust, scalable, and \ncontext-aware DT systems",
+      "value": "",
+      "unit": "",
+      "condition": "In addition to technological integration",
+      "strength": "can accelerate",
+      "id": "C006-F11",
+      "quote_verified": true
+    },
+    {
+      "page": 15,
+      "kind": "problem",
+      "claim": "在人机协作系统中，人既是不可缺少的参与者，也可能是不确定性的来源，因此需要理解人的行为差异并将其纳入数字孪生模型；挑战在于捕捉和整合人的行为、决策与行动，以改善系统准确性和灵活性。",
+      "quote": "While humans are integral to these systems, they \nmay also be the source of uncertainty. This uncertainty highlights the \nnecessity to understand and incorporate human variability into DT \nmodels. The challenge lies in capturing and integrating human behav-\niours, decisions and actions into DT models to improve system accuracy \nand flexibility.",
+      "subject": "humans",
+      "metric": "system accuracy \nand flexibility",
+      "value": "",
+      "unit": "",
+      "condition": "While humans are integral to these systems",
+      "strength": "may",
+      "id": "C006-F12",
+      "quote_verified": true
+    }
+  ],
+  "chunks": [
+    {
+      "index": 1,
+      "pages": [
+        1,
+        2,
+        3
+      ],
+      "fact_count": 6,
+      "fallback": false
+    },
+    {
+      "index": 2,
+      "pages": [
+        4,
+        5,
+        6
+      ],
+      "fact_count": 0,
+      "fallback": true
+    },
+    {
+      "index": 3,
+      "pages": [
+        7,
+        8
+      ],
+      "fact_count": 7,
+      "fallback": false
+    },
+    {
+      "index": 4,
+      "pages": [
+        9,
+        10
+      ],
+      "fact_count": 4,
+      "fallback": false
+    },
+    {
+      "index": 5,
+      "pages": [
+        11,
+        12
+      ],
+      "fact_count": 9,
+      "fallback": false
+    },
+    {
+      "index": 6,
+      "pages": [
+        13,
+        14,
+        15
+      ],
+      "fact_count": 12,
+      "fallback": false
+    },
+    {
+      "index": 7,
+      "pages": [
+        16,
+        17
+      ],
+      "fact_count": 0,
+      "fallback": true
+    },
+    {
+      "index": 8,
+      "pages": [
+        18
+      ],
+      "fact_count": 0,
+      "fallback": true
+    },
+    {
+      "index": 9,
+      "pages": [
+        19
+      ],
+      "fact_count": 0,
+      "fallback": true
+    },
+    {
+      "index": 10,
+      "pages": [
+        20,
+        21
+      ],
+      "fact_count": 0,
+      "fallback": true
+    }
+  ],
+  "validation": [],
+  "quality_checks": [],
+  "quality_check_enabled": true,
+  "rejected_facts": [
+    {
+      "chunk": 1,
+      "count": 5,
+      "examples": [
+        "事实字段condition不是原句中的摘录",
+        "事实引文在当前片段第1页找不到，不接受编造或跨页拼接证据",
+        "事实字段subject不是原句中的摘录"
+      ]
+    },
+    {
+      "chunk": 3,
+      "count": 1,
+      "examples": [
+        "事实引文在当前片段第7页找不到，不接受编造或跨页拼接证据"
+      ]
+    },
+    {
+      "chunk": 4,
+      "count": 7,
+      "examples": [
+        "事实引文在当前片段第9页找不到，不接受编造或跨页拼接证据",
+        "事实引文在当前片段第9页找不到，不接受编造或跨页拼接证据",
+        "事实引文在当前片段第9页找不到，不接受编造或跨页拼接证据"
+      ]
+    },
+    {
+      "chunk": 5,
+      "count": 1,
+      "examples": [
+        "事实字段condition不是原句中的摘录"
+      ]
+    }
+  ],
+  "fact_errors": [
+    {
+      "chunk": 2,
+      "error": "调用失败（已重试 2 次）：ReadTimeout"
+    },
+    {
+      "chunk": 7,
+      "error": "调用失败（已重试 2 次）：ReadTimeout"
+    }
+  ],
+  "strict_generation_error": "调用失败（已重试 2 次）：ReadTimeout",
+  "generation_error": {
+    "type": "LLMError",
+    "message": "简化生成路径仍未通过结构验收：文末须有且仅有一个非空对应材料编号字段；文末须有且仅有一个非空原文来源字段"
+  }
+}

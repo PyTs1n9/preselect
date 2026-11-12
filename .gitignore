@@ -3,3 +3,9 @@
 .vscode/
 *.swp
 /code-docs/
+
+# Local secrets and generated/project-only content
+**/.env
+**/docs/
+**/material/
+**/materials/
