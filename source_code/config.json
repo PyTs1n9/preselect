@@ -1,0 +1,57 @@
+{
+  "materials_dir": "materials",
+  "output_dir": "docs",
+  "package_name": "作品.zip",
+  "llm": {
+    "preset": "mixtk",
+    "base_url": "",
+    "model": "",
+    "api_key_env": "LLM_API_KEY",
+    "temperature": 0.3,
+    "max_tokens": 4096,
+    "timeout": 180
+  },
+  "llm_presets": {
+    "mixtk": {
+      "base_url": "https://api.mixtk.com/v1",
+      "model": "gpt-6.1-sol"
+    },
+    "deepseek": {
+      "base_url": "https://api.deepseek.com/v1",
+      "model": "deepseek-chat"
+    },
+    "dashscope": {
+      "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      "model": "qwen-plus"
+    },
+    "zhipu": {
+      "base_url": "https://open.bigmodel.cn/api/paas/v4",
+      "model": "glm-4-flash"
+    },
+    "moonshot": {
+      "base_url": "https://api.moonshot.cn/v1",
+      "model": "moonshot-v1-8k"
+    }
+  },
+  "document": {
+    "target_words": 1600,
+    "overrides": {
+      "AI-01": {
+        "title": "用“语义熵”给大模型“测谎”：如何识破一本正经的胡说八道",
+        "source": "Farquhar S, Kossen J, Kuhn L, Gal Y. Detecting hallucinations in large language models using semantic entropy. Nature, 2024, 630: 625-633. DOI: 10.1038/s41586-024-07421-0"
+      },
+      "BIO-02": {
+        "title": "mRNA 疫苗：给身体的一封“制药指令书”",
+        "source": "Pardi N, Krammer F. mRNA vaccines for infectious diseases — advances, challenges and opportunities. Nature Reviews Drug Discovery, 2024, 23(11): 838-861. DOI: 10.1038/s41573-024-01042-y"
+      },
+      "IND-03": {
+        "title": "数字孪生：为智能工业造一个“会呼吸”的数字分身",
+        "source": "Ding P, Liu SQ, Chiong R, et al. A review of digital twins in smart industries: Concepts, milestones, trends, applications, opportunities and challenges. Computers in Industry, 2026, 174: 104398. DOI: 10.1016/j.compind.2025.104398"
+      },
+      "MED-04": {
+        "title": "医疗AI的进化：从“看一种病”到“懂整个人”",
+        "source": "Ma W, Sheng B, Liu Y, et al. Evolution of Future Medical AI Models — From Task-Specific, Disease-Centric to Universal Health. NEJM AI, 2024, 1(8). DOI: 10.1056/AIp2400289"
+      }
+    }
+  }
+}
