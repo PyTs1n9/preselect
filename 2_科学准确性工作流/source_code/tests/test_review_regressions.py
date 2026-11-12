@@ -116,6 +116,34 @@ class EvidenceRegressionTests(unittest.TestCase):
         self.assertTrue(any(item["section"] == "方法/综述筛选" and item["page"] == 2 for item in result["structure"]))
         self.assertFalse(result["coverage"]["review_complete"])
 
+    def test_claim_evidence_has_budget_priority_over_structure_cues(self):
+        claims = [{"id": f"C{i:03d}", "sentence": f"Claim {i} describes a substantive finding.",
+                   "is_negative": False,
+                   "candidates": [{"page": 1, "text": f"Evidence {i}. " + "detail " * 60,
+                                  "strength": "candidate", "matched_terms": ["en:substantive"]}],
+                   "status": "uncovered"} for i in range(1, 5)]
+        pages = [{"page": 1, "text": "Methods\n" + "Structural context. " * 50}]
+        result = evidence._render_context(claims, pages, 3500, ["检索边界说明。"])
+
+        self.assertTrue(all(claim["candidates"][0]["included"] for claim in result["claims"]))
+        self.assertEqual([claim["id"] for claim in result["claims"] if claim["status"] == "budget_limited"], [])
+        self.assertLess(result["text"].index("【C004 待核主张】"), result["text"].find("【原文结构线索："))
+
+    def test_selected_candidate_flag_marks_the_quote_that_was_rendered(self):
+        primary = {"page": 1, "text": "Primary evidence supports this claim.", "strength": "candidate",
+                   "origin": "semantic_quote_verified", "relation": "supports"}
+        secondary = {"page": 2, "text": "Independent evidence also supports this claim.", "strength": "candidate",
+                     "origin": "semantic_quote_verified", "relation": "supports"}
+        claims = [{"id": "C001", "sentence": "A substantive claim for regression coverage.", "is_negative": False,
+                   "candidates": [primary, secondary], "status": "uncovered"}]
+
+        result = evidence._render_context(claims, [{"page": 1, "text": "Methods\nBackground."}], 4000, ["Boundary."])
+
+        self.assertTrue(primary["included"])
+        self.assertTrue(secondary["included"])
+        self.assertIn(primary["text"], result["text"])
+        self.assertIn(secondary["text"], result["text"])
+
     def test_uncovered_claim_prevents_model_full_score_from_being_accepted(self):
         class Client:
             def chat(self, system, prompt):
@@ -157,7 +185,7 @@ class SemanticEvidenceRegressionTests(unittest.TestCase):
     def test_invented_quote_is_rejected(self):
         client = self.Client(lambda *_: self.payload("The flurbin apparatus cures all known diseases."))
         context = evidence.build_semantic_review_context(client, self.CLAIM, [{"page": 1, "text": self.QUOTE}])
-        self.assertEqual(context["coverage"]["semantic_scan"]["rejected_quotes"], 1)
+        self.assertGreaterEqual(context["coverage"]["semantic_scan"]["rejected_quotes"], 1)
         self.assertFalse(context["coverage"]["semantic_scan"]["complete"])
         self.assertEqual(context["coverage"]["candidate_claims"], 0)
         self.assertNotIn("cures all", context["text"])
@@ -181,7 +209,7 @@ class SemanticEvidenceRegressionTests(unittest.TestCase):
 
     def test_partial_failure_cannot_become_complete_even_with_claim_candidate(self):
         def callback(prompt, call):
-            if call == 2:
+            if call == 2 or "重试要求" in prompt:
                 raise RuntimeError("synthetic failure")
             return self.payload() if self.QUOTE in prompt else '{"matches": []}'
         client = self.Client(callback)
@@ -191,6 +219,70 @@ class SemanticEvidenceRegressionTests(unittest.TestCase):
         self.assertFalse(scan["complete"])
         self.assertEqual(len(scan["failed_chunks"]), 1)
         self.assertTrue(any(item["id"] == "SCAN" for item in context["uncovered"]))
+
+    def test_failed_chunk_retry_splits_many_claims_within_the_call_budget(self):
+        document = "\n".join(f"第{i}项观察有明确的研究结果。" for i in range(21))
+        calls = []
+
+        def callback(prompt, call):
+            calls.append(prompt)
+            if call == 1:
+                return json.dumps({"matches": [{"claim_id": "C999", "page": 1,
+                                                "quote": "Invented quotation in this source.",
+                                                "relation": "supports"} ]})
+            return '{"matches": []}'
+
+        client = self.Client(callback)
+        context = evidence.build_semantic_review_context(
+            client, document, [{"page": 1, "text": "A source passage without claim evidence."}], max_calls=4)
+
+        scan = context["coverage"]["semantic_scan"]
+        self.assertEqual(scan["retry_calls"], 3)
+        self.assertEqual(scan["calls"], 4)
+        self.assertEqual(scan["failed_chunks"], [])
+        self.assertTrue(scan["complete"])
+        self.assertFalse(context["coverage"]["review_complete"])
+
+    def test_failed_chunk_retry_focuses_on_claims_with_rejected_quotes(self):
+        quote = self.QUOTE
+        document = "\n".join(f"第{i}项有独特的研究结论。" for i in range(21))
+        prompts = []
+
+        def callback(prompt, call):
+            prompts.append(prompt)
+            if call == 1:
+                return json.dumps({"matches": [{"claim_id": "C001", "page": 1,
+                                                "quote": "Fabricated quotation not present here.",
+                                                "relation": "supports"}]})
+            return '{"matches": []}'
+
+        client = self.Client(callback)
+        context = evidence.build_semantic_review_context(
+            client, document, [{"page": 1, "text": quote}], max_calls=3)
+
+        scan = context["coverage"]["semantic_scan"]
+        self.assertEqual(scan["retry_calls"], 1)
+        self.assertEqual(scan["failed_chunks"], [])
+        self.assertTrue(scan["complete"])
+        self.assertIn("C001", prompts[1])
+        self.assertNotIn("C021", prompts[1])
+
+    def test_targeted_lookup_includes_weak_lexical_candidates(self):
+        quote = "The current is 42 amperes."
+
+        def callback(prompt, _):
+            if "定向补查" in prompt:
+                return json.dumps({"matches": [{"claim_id": "C001", "page": 1,
+                                                "quote": quote, "relation": "supports"}]})
+            return '{"matches": []}'
+
+        client = self.Client(callback)
+        context = evidence.build_semantic_review_context(
+            client, "参与者共有42人。", [{"page": 1, "text": quote}])
+
+        self.assertEqual(context["coverage"]["semantic_scan"]["targeted_calls"], 1)
+        self.assertTrue(context["claims"][0]["candidates"][0]["quote_verified"])
+        self.assertFalse(context["claims"][0]["candidates"][0]["relation_verified"])
 
     def test_call_limit_is_respected_and_skips_are_visible(self):
         client = self.Client(lambda *_: '{"matches": []}')
@@ -217,6 +309,27 @@ class SemanticEvidenceRegressionTests(unittest.TestCase):
         context = evidence.build_semantic_review_context(client, self.CLAIM, [{"page": 1, "text": actual}])
         self.assertEqual(context["claims"][0]["candidates"][0]["text"], actual)
 
+    def test_pdf_line_end_hyphenation_is_normalized_without_accepting_new_words(self):
+        client = self.Client(lambda *_: self.payload("The flurbin appara-\n\ntus enhanced vorticity in the chamber."))
+        actual = "The flurbin apparatus enhanced vorticity in the chamber."
+        context = evidence.build_semantic_review_context(client, self.CLAIM, [{"page": 1, "text": actual}])
+        self.assertEqual(context["coverage"]["semantic_scan"]["validated_candidates"], 1)
+        self.assertEqual(context["claims"][0]["candidates"][0]["text"], actual)
+
+    def test_hyphenation_repair_still_rejects_a_quote_with_changed_meaning(self):
+        client = self.Client(lambda *_: self.payload("The flurbin apparatus prevented vorticity in the chamber."))
+        context = evidence.build_semantic_review_context(client, self.CLAIM, [{"page": 1, "text": self.QUOTE}])
+        self.assertEqual(context["coverage"]["semantic_scan"]["validated_candidates"], 0)
+        self.assertGreaterEqual(context["coverage"]["semantic_scan"]["rejected_quotes"], 1)
+
+    def test_spaced_pdf_line_end_hyphenation_matches_the_original_word(self):
+        quote = "The method was systematically misleading to readers."
+        actual = "The method was systemati- \ncally misleading to readers."
+        client = self.Client(lambda *_: self.payload(quote))
+        context = evidence.build_semantic_review_context(client, self.CLAIM, [{"page": 1, "text": actual}])
+        self.assertEqual(context["coverage"]["semantic_scan"]["validated_candidates"], 1)
+        self.assertEqual(context["claims"][0]["candidates"][0]["text"], actual)
+
     def test_negative_or_model_contradiction_remains_pending(self):
         for document, relation in [("原文未展开这种装置。", "supports"), (self.CLAIM, "contradicts")]:
             with self.subTest(document=document):
@@ -234,7 +347,7 @@ class SemanticEvidenceRegressionTests(unittest.TestCase):
     def test_bad_match_types_are_rejected_without_crashing(self):
         client = self.Client(lambda *_: json.dumps({"matches": [{"claim_id": {}, "relation": []}]}))
         context = evidence.build_semantic_review_context(client, self.CLAIM, [{"page": 1, "text": self.QUOTE}])
-        self.assertEqual(context["coverage"]["semantic_scan"]["rejected_quotes"], 1)
+        self.assertGreaterEqual(context["coverage"]["semantic_scan"]["rejected_quotes"], 1)
 
 
 class FormatRegressionTests(unittest.TestCase):

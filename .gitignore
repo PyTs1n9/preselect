@@ -9,3 +9,14 @@
 **/docs/
 **/material/
 **/materials/
+
+# Keep workflow decisions; generated articles and review data stay local.
+!/docs/
+/docs/*
+!/docs/decisions-single-metric-workflows.md
+!/docs/single-metric-workflows.md
+**/__pycache__/
+*.py[cod]
+**/source_code/result/
+/workflow-benchmark/
+**/作品.zip

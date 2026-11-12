@@ -178,9 +178,12 @@ class TestDraftAcceptance(unittest.TestCase):
         self.assertIn("不证明改写准确性或生成过程", out)
 
 
-def quality_result(issues=None):
+def quality_result(issues=None, body=VALID_BODY):
+    coverage = [{"article_quote": sentence, "evidence_quote": QUOTE,
+                 "status": "supported", "fact_ids": ["RAW-CONTENT"]}
+                for sentence in generate._claim_sentences(body)]
     return json.dumps({"checked": sorted(generate._QUALITY_DIMENSIONS),
-                       "issues": issues or []}, ensure_ascii=False)
+                       "issues": issues or [], "coverage": coverage}, ensure_ascii=False)
 
 
 def quality_issue(category="accuracy", article="比较同一问题的多个回答，先看含义是否一致。", quote=QUOTE):
@@ -208,7 +211,7 @@ class TestEvidenceQualityGate(unittest.TestCase):
         revised = VALID_BODY.replace("比较同一问题的多个回答，先看含义是否一致。", "本次实验的成人样本准确率为80%。")
         artifacts = {}
         body, client = self.run_generation([VALID_BODY, quality_result([quality_issue()]),
-                                            revised, quality_result()], artifacts)
+                                            revised, quality_result(body=revised)], artifacts)
         self.assertEqual(body, revised)
         self.assertEqual(len(client.requests), 4)
         self.assertEqual(len(artifacts["quality_checks"]), 2)

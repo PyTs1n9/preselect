@@ -78,6 +78,52 @@ class SingleReviewTests(unittest.TestCase):
                     self.assertNotIn(other, system + prompt)
         self.assertEqual(before, {p.name: p.read_bytes() for p in self.docs.iterdir()})
 
+    def test_identical_review_reuses_responses_and_revalidates_scores(self):
+        with patch.object(generate.LLMClient, "chat", return_value=self.payload()) as chat:
+            self.invoke()
+            calls = chat.call_count
+            with patch.object(single_review, "_parse_assessment", wraps=single_review._parse_assessment) as parse:
+                code, output = self.invoke()
+        self.assertEqual(code, 0, output)
+        self.assertEqual(chat.call_count, calls)
+        self.assertEqual(parse.call_count, 1 if criterion.KEY == "format" else 4)
+
+    def test_structured_report_keeps_unverified_scores_incomplete(self):
+        with patch.object(generate.LLMClient, "chat", return_value=self.payload(unverified_items=["需要人工复核"])):
+            self.invoke()
+        reports = list((self.source / "result").glob("review_*.json"))
+        self.assertEqual(len(reports), 1)
+        report = json.loads(reports[0].read_text(encoding="utf-8"))
+        self.assertFalse(report["complete"])
+        self.assertTrue(all(result["score"] is None for result in report["results"]))
+        self.assertEqual(set(report["document_sha256"]), {f"M0{i}.md" for i in range(1, 5)})
+
+    def test_review_transport_timeout_does_not_change_model_sampling(self):
+        self.config["review"]["request_timeout"] = 180
+        self.config["llm"].update({"timeout": 60, "temperature": 0.3, "max_tokens": 8192})
+        with patch.object(generate.LLMClient, "chat", autospec=True, return_value=self.payload()) as chat:
+            self.invoke()
+        for call in chat.call_args_list:
+            client = call.args[0]
+            self.assertEqual(client.timeout, 180)
+            self.assertEqual((client.model, client.temperature, client.max_tokens), ("test", 0.3, 8192))
+
+    def test_invalid_review_transport_timeout_is_reported_without_request(self):
+        self.config["review"]["request_timeout"] = "invalid"
+        with patch.object(generate.LLMClient, "chat") as chat:
+            code, _ = self.invoke()
+        self.assertEqual(code, 1)
+        chat.assert_not_called()
+
+    def test_changed_document_does_not_reuse_its_previous_assessment(self):
+        with patch.object(generate.LLMClient, "chat", return_value=self.payload()) as chat:
+            self.invoke()
+            calls = chat.call_count
+            doc = self.docs / "M01.md"
+            doc.write_text(doc.read_text(encoding="utf-8").replace("信息是否可靠", "信息为何可靠"), encoding="utf-8")
+            self.invoke()
+        self.assertEqual(chat.call_count, calls + 1)
+
     def test_offline_never_calls_llm_or_scores(self):
         with patch.object(generate.LLMClient, "chat") as chat:
             code, output = self.invoke(offline=True)
@@ -114,6 +160,41 @@ class SingleReviewTests(unittest.TestCase):
     def test_extra_score_dimension_is_rejected(self):
         with self.assertRaises(generate.LLMError):
             self.assess(self.payload(other_score=12))
+
+    def test_empty_optional_unverified_items_preserves_valid_score(self):
+        result = self.assess(self.payload(unverified_items=[]))
+        self.assertEqual(result["score"], criterion.MAX_SCORE)
+        self.assertEqual(result["pending"], [])
+
+    def test_localized_unverified_field_is_preserved_and_blocks_score(self):
+        response = json.loads(self.payload(unverified_items=["证据未覆盖"]))
+        response["未核验项"] = ["图表未核验"]
+        result = self.assess(json.dumps(response, ensure_ascii=False))
+        self.assertIsNone(result["score"])
+        self.assertEqual(result["pending"], ["证据未覆盖", "图表未核验"])
+
+    def test_invalid_response_is_repaired_once_with_same_scoring_rules(self):
+        client = generate.LLMClient(self.config["llm"])
+        with patch.object(client, "chat", side_effect=[self.payload(dimension="错误指标"), self.payload()]) as chat:
+            result = single_review.assess(client, BODY, {"text": SOURCE, "pending": []})
+        self.assertEqual(result["score"], criterion.MAX_SCORE)
+        self.assertEqual(chat.call_count, 2)
+        self.assertTrue(chat.call_args_list[1].args[1].startswith(chat.call_args_list[0].args[1]))
+
+    def test_model_unverified_items_block_score_and_preserve_existing_pending(self):
+        result = self.assess(self.payload(unverified_items=["图表需要复核"]), ["某页未覆盖"])
+        self.assertIsNone(result["score"])
+        self.assertEqual(result["pending"], ["某页未覆盖", "图表需要复核"])
+
+    def test_invalid_optional_unverified_items_are_rejected(self):
+        for value in (None, "未核验", [""], [{}], [1]):
+            with self.subTest(value=value), self.assertRaises(generate.LLMError):
+                self.assess(self.payload(unverified_items=value))
+
+    def test_null_score_without_pending_is_explicitly_marked_for_review(self):
+        result = self.assess(self.payload(score=None))
+        self.assertIsNone(result["score"])
+        self.assertTrue(result["pending"])
 
     def test_missing_score_field_is_not_success(self):
         result = json.loads(self.payload())
@@ -168,6 +249,10 @@ class SingleReviewTests(unittest.TestCase):
         self.assertEqual(chat.call_count, 1)
         self.assertIn("10/10", output)
         self.assertNotIn("待复核，暂不计分", output)
+        prompt = chat.call_args.args[1]
+        self.assertIn('"all_hard_checks_passed": true', prompt)
+        self.assertIn('"body_chars":', prompt)
+        self.assertIn('"entries":', prompt)
 
     def test_format_rejects_a_model_that_ignores_proven_errors(self):
         if criterion.KEY != "format":
@@ -255,10 +340,49 @@ class SingleReviewTests(unittest.TestCase):
             self.skipTest("仅适用于科学准确性")
         config = {"review": {"evidence_max_chars": 1000, "max_evidence_calls": 2}}
         found = {"text": SOURCE, "uncovered": [{"id": "SCAN", "reason": "扫描未完成"}]}
+        client = object()
+        pages = [{"page": 1, "text": SOURCE * 100}]
         with patch.object(evidence, "build_semantic_review_context", return_value=found) as retrieve:
-            result = single_review.context_for(object(), BODY, [{"page": 1, "text": SOURCE * 100}], config)
+            result = single_review.context_for(client, BODY, pages, config)
+        self.assertIs(retrieve.call_args.args[0], client)
+        self.assertEqual(retrieve.call_args.args[1:], (BODY, pages))
         self.assertEqual(retrieve.call_args.kwargs["max_calls"], 2)
         self.assertTrue(result["pending"])
+
+    def test_accuracy_offline_long_source_uses_local_retrieval_without_client(self):
+        if criterion.KEY != "accuracy":
+            self.skipTest("仅适用于科学准确性")
+        config = {"review": {"evidence_max_chars": 1000, "max_evidence_calls": 2}}
+        pages = [{"page": 1, "text": SOURCE * 100}]
+        found = {"text": SOURCE, "uncovered": []}
+        with patch.object(evidence, "build_review_context", return_value=found) as retrieve:
+            result = single_review.context_for(None, BODY, pages, config, offline=True)
+        self.assertEqual(retrieve.call_args.args, (BODY, pages))
+        self.assertEqual(retrieve.call_args.kwargs, {"max_chars": 1000})
+        self.assertEqual(result["pending"], [])
+
+    def test_coverage_uses_a_compact_fact_set_without_relaxing_generation_limit(self):
+        if criterion.KEY != "coverage":
+            self.skipTest("仅适用于内容完整性")
+        quotes = [f"The key finding {i} demonstrated a supported reduction in uncertainty." for i in range(24)]
+        page = {"page": 1, "text": " filler ".join(quotes) + " filler" * 2000}
+        config = {"review": {"evidence_max_chars": 10000, "max_evidence_calls": 2}}
+        fact = {"page": 1, "kind": "finding", "claim": "关键发现", "quote": quotes[0],
+                "subject": "", "metric": "", "value": "", "unit": "", "condition": "", "strength": ""}
+        facts = [{**fact, "quote": quote} for quote in quotes]
+        raw = json.dumps({"facts": facts[:single_review.MAX_REVIEW_FACTS_PER_CHUNK]})
+        client = generate.LLMClient(self.config["llm"])
+        with patch.object(client, "chat", return_value=raw):
+            context = single_review.context_for(client, BODY, [page], config)
+        self.assertEqual(context["pending"], [])
+        self.assertIn("C001-F06", context["text"])
+        self.assertEqual(len(single_review._coverage_facts(json.dumps({"facts": facts}), [page], 1)), 24)
+        with self.assertRaises(generate.LLMError):
+            single_review._coverage_facts(json.dumps({"facts": [*facts, facts[0]]}), [page], 1)
+        self.assertEqual(len(generate._validated_facts(json.dumps({"facts": facts}), [page], 1, max_facts=24)), 24)
+        with self.assertRaises(generate.LLMError):
+            generate._validated_facts(json.dumps({"facts": [{**fact, "quote": "forged quotation beyond source"}]}),
+                                      [page], 1, max_facts=24)
 
     def test_coverage_long_source_checks_original_points_not_just_article_claims(self):
         if criterion.KEY != "coverage":
@@ -285,6 +409,98 @@ class SingleReviewTests(unittest.TestCase):
         self.assertEqual(chat.call_count, 1)
         self.assertTrue(any("上限" in p for p in result["pending"]))
         self.assertTrue(any("失败" in p for p in result["pending"]))
+
+    def test_coverage_reserves_evidence_for_the_end_of_a_long_source(self):
+        if criterion.KEY != "coverage":
+            self.skipTest("仅适用于内容完整性")
+        chunks = [[{"page": 1, "text": "The method reduced errors. " * 100}],
+                  [{"page": 2, "text": "The limitation was a small sample. " * 100}]]
+        responses = [json.dumps({"facts": [{"page": page, "kind": kind, "claim": claim, "quote": quote}]})
+            for page, kind, claim, quote in [(1, "method", "研究方法", "The method reduced errors."),
+                                             (2, "limitation", "必要局限", "The limitation was a small sample.")]]
+        client = generate.LLMClient(self.config["llm"])
+        config = {"review": {"evidence_max_chars": 1000, "max_evidence_calls": 2}}
+        with patch.object(generate, "_page_chunks", return_value=chunks):
+            with patch.object(client, "chat", side_effect=responses) as chat:
+                result = single_review.context_for(client, BODY, [row[0] for row in chunks], config)
+        self.assertEqual(chat.call_count, 2)
+        self.assertEqual(result["pending"], [])
+        self.assertLessEqual(len(result["text"]), 1000)
+        self.assertIn("必要局限", result["text"])
+
+    def test_coverage_repairs_a_false_quote_after_scanning_all_chunks(self):
+        if criterion.KEY != "coverage":
+            self.skipTest("仅适用于内容完整性")
+        quote = "The method reduced errors."
+        chunks = [[{"page": 1, "text": quote * 100}], [{"page": 2, "text": "References " * 100}]]
+        fact = {"page": 1, "kind": "finding", "claim": "主要发现", "quote": quote}
+        bad = json.dumps({"facts": [{**fact, "quote": "This quote does not exist."}]})
+        good = json.dumps({"facts": [fact]})
+        client = generate.LLMClient(self.config["llm"])
+        config = {"review": {"evidence_max_chars": 1000, "max_evidence_calls": 3}}
+        with patch.object(generate, "_page_chunks", return_value=chunks):
+            with patch.object(client, "chat", side_effect=[bad, '{"facts":[]}', good]) as chat:
+                result = single_review.context_for(client, BODY, [row[0] for row in chunks], config)
+        self.assertEqual(chat.call_count, 3)
+        self.assertIn("References", chat.call_args_list[1].args[1])
+        self.assertEqual(result["pending"], [])
+        self.assertIn(quote, result["text"])
+        self.assertNotIn("This quote does not exist.", result["text"])
+
+    def test_coverage_rebinds_a_mislabelled_page_only_when_quote_is_unique(self):
+        if criterion.KEY != "coverage":
+            self.skipTest("仅适用于内容完整性")
+        quote = "The key finding changed the observed outcome."
+        chunks = [[{"page": 7, "text": "Background. " * 100}, {"page": 8, "text": quote + " filler" * 100}]]
+        raw = json.dumps({"facts": [{"page": 7, "kind": "finding", "claim": "关键发现", "quote": quote}]})
+        facts = single_review._coverage_facts(raw, chunks[0], 1)
+        self.assertEqual(len(facts), 1)
+        self.assertEqual(facts[0]["page"], 8)
+
+    def test_coverage_rejects_quote_ambiguous_across_pages(self):
+        if criterion.KEY != "coverage":
+            self.skipTest("仅适用于内容完整性")
+        quote = "The key finding changed the observed outcome."
+        chunks = [[{"page": 7, "text": quote}, {"page": 8, "text": quote}]]
+        raw = json.dumps({"facts": [{"page": 6, "kind": "finding", "claim": "关键发现", "quote": quote}]})
+        with self.assertRaises(generate.LLMError):
+            single_review._coverage_facts(raw, chunks[0], 1)
+
+    def test_coverage_quote_resolves_pdf_line_hyphens_and_terminal_citations(self):
+        quote = "answers in the same cluster entail each other bidirectionally."
+        chunk = [{"page": 2, "text": "answers in the same cluster entail each other bidirectionally28. That is the method."}]
+        self.assertEqual(single_review._coverage_source_quote(quote, chunk),
+                         (2, "answers in the same cluster entail each other bidirectionally28."))
+        hyphenated = [{"page": 5, "text": "They are systemati- \ncally misleading the user."}]
+        self.assertEqual(generate._normalize_quote("They are systematically misleading the user."),
+                         generate._normalize_quote(hyphenated[0]["text"]))
+        split_compound = [{"page": 6, "text": "Monitoring and decision- \nmaking improve construction."}]
+        self.assertEqual(single_review._coverage_source_quote(
+            "Monitoring and decision-making improve construction.", split_compound),
+            (6, "Monitoring and decision- \nmaking improve construction."))
+
+    def test_coverage_quote_never_drops_an_ordinary_numerical_value(self):
+        quote = "The measured rate reached 20 percent."
+        chunk = [{"page": 2, "text": "The measured rate reached 20 percent."}]
+        self.assertEqual(single_review._coverage_source_quote("The measured rate reached percent.", chunk), None)
+
+    def test_coverage_oversize_or_repeated_false_quotes_cannot_be_scored(self):
+        if criterion.KEY != "coverage":
+            self.skipTest("仅适用于内容完整性")
+        quote = "The detailed result needs all these conditions. " * 30
+        chunks = [[{"page": 1, "text": quote * 2}]]
+        for response in ({"facts": [{"page": 1, "kind": "finding", "claim": "结果", "quote": quote}]},
+                         {"facts": [{"page": 1, "kind": "finding", "claim": "结果", "quote": "forged quote missing here"}]}):
+            with self.subTest(response=response):
+                client = generate.LLMClient(self.config["llm"])
+                with patch.object(generate, "_page_chunks", return_value=chunks):
+                    with patch.object(client, "chat", return_value=json.dumps(response)) as chat:
+                        result = single_review.context_for(client, BODY, [chunks[0][0]],
+                            {"review": {"evidence_max_chars": 1000, "max_evidence_calls": 2}})
+                self.assertEqual(chat.call_count, 2)
+                self.assertTrue(result["pending"])
+                self.assertLessEqual(len(result["text"]), 1000)
+                self.assertIsNone(single_review._parse_assessment(self.payload(), BODY, result)["score"])
 
 
 if __name__ == "__main__":

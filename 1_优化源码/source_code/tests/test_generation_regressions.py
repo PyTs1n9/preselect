@@ -45,16 +45,8 @@ class TestResponseCompletion(unittest.TestCase):
                 client.chat("system", "user")
         self.assertEqual(len(calls), 1)
 
-    def test_partial_and_missing_finish_reason_are_usable_but_filtered_responses_are_rejected(self):
-        for reason in ("length", None):
-            with self.subTest(reason=reason):
-                response = types.SimpleNamespace(status_code=200, json=lambda: {
-                    "choices": [{"finish_reason": reason, "message": {"content": VALID_BODY}}]})
-                requests = types.SimpleNamespace(post=lambda *a, **k: response)
-                with patch.dict("sys.modules", {"requests": requests}), patch.dict(os.environ, {"LLM_API_KEY": "test-value"}):
-                    client = generate.LLMClient({"base_url": "http://example.invalid", "model": "test"})
-                    self.assertEqual(client.chat("system", "user"), VALID_BODY)
-        for reason in ("content_filter", "tool_calls"):
+    def test_only_stop_completion_is_usable(self):
+        for reason in ("length", None, "content_filter", "tool_calls"):
             with self.subTest(reason=reason):
                 self._chat(reason, VALID_BODY)
 
@@ -99,6 +91,17 @@ class TestPageEvidence(unittest.TestCase):
             generate._extract_facts(client, "提取事实", [{"page": 1, "text": "Unrelated original material."}], 1)
         self.assertEqual(len(client.requests), 2)
 
+    def test_mixed_valid_and_invalid_facts_are_rejected_as_a_whole(self):
+        invalid = fact()
+        invalid["quote"] = "This quote is absent from the page."
+        raw = json.dumps({"facts": [fact(), invalid]}, ensure_ascii=False)
+        client = SequenceClient([raw, raw])
+        with self.assertRaisesRegex(generate.LLMError, "事实证据校验失败"):
+            generate._extract_facts(
+                client, "提取事实", [{"page": 1, "text": QUOTE}], 1
+            )
+        self.assertEqual(len(client.requests), 2)
+
     def test_valid_evidence_preserves_page_and_whitespace_tolerant_quote(self):
         rows = generate._validated_facts(json.dumps({"facts": [fact(page=7)]}),
                                         [{"page": 7, "text": QUOTE.replace("accuracy was", "accuracy\nwas")}], 3)
@@ -114,9 +117,9 @@ class TestPageEvidence(unittest.TestCase):
             def chat(self, system, user):
                 self.requests.append(user)
                 if "【片段内容】" in user:
-                    page = int(re.search(r"\[PAGE (\d+)\]", user).group(1))
+                    pages_in_chunk = sorted({int(value) for value in re.findall(r"\[PAGE (\d+)\]", user)})
                     # 一页可能切成两块；仅引用当前片段中完整出现的原句。
-                    return json.dumps({"facts": [fact(page=page)]})
+                    return json.dumps({"facts": [fact(page=page) for page in pages_in_chunk]})
                 return VALID_BODY
         client, artifacts = EvidenceClient(), {}
         out = generate.generate_with_llm(client, "\n".join(p["text"] for p in pages),
@@ -178,9 +181,13 @@ class TestDraftAcceptance(unittest.TestCase):
         self.assertIn("不证明改写准确性或生成过程", out)
 
 
-def quality_result(issues=None):
+def quality_result(issues=None, body=VALID_BODY):
+    coverage = [{"article_quote": sentence, "evidence_quote": QUOTE,
+                 "dimension": "finding", "status": "supported",
+                 "fact_ids": ["RAW-CONTENT"]}
+                for sentence in generate._claim_sentences(body)]
     return json.dumps({"checked": sorted(generate._QUALITY_DIMENSIONS),
-                       "issues": issues or []}, ensure_ascii=False)
+                       "issues": issues or [], "coverage": coverage}, ensure_ascii=False)
 
 
 def quality_issue(category="accuracy", article="比较同一问题的多个回答，先看含义是否一致。", quote=QUOTE):
@@ -208,38 +215,38 @@ class TestEvidenceQualityGate(unittest.TestCase):
         revised = VALID_BODY.replace("比较同一问题的多个回答，先看含义是否一致。", "本次实验的成人样本准确率为80%。")
         artifacts = {}
         body, client = self.run_generation([VALID_BODY, quality_result([quality_issue()]),
-                                            revised, quality_result()], artifacts)
+                                            revised, quality_result(body=revised)], artifacts)
         self.assertEqual(body, revised)
         self.assertEqual(len(client.requests), 4)
         self.assertEqual(len(artifacts["quality_checks"]), 2)
         self.assertIn(QUOTE, client.requests[2])
 
-    def test_unresolved_core_issue_is_reported_without_discarding_article(self):
+    def test_unresolved_core_issue_blocks_generation(self):
         artifacts = {}
         client = SequenceClient([VALID_BODY, quality_result([quality_issue()]),
                                  VALID_BODY, quality_result([quality_issue()])])
-        body = generate.generate_with_llm(client, QUOTE, "M01", "某论文", 1200,
-                                           quality_check=True, artifacts=artifacts)
-        self.assertEqual(body, VALID_BODY)
-        self.assertEqual(artifacts["quality_checks"][-1]["status"], "unresolved")
+        with self.assertRaisesRegex(generate.LLMError, "仍未解决"):
+            generate.generate_with_llm(client, QUOTE, "M01", "某论文", 1200,
+                                       quality_check=True, artifacts=artifacts)
+        self.assertEqual(artifacts["quality_checks"][-1]["status"], "checked")
         self.assertEqual(len(client.requests), 4)
 
     def test_malformed_or_incomplete_review_is_not_a_pass(self):
         for raw in ("No issues found.", "{}", json.dumps({"checked": [], "issues": []})):
             with self.subTest(raw=raw):
                 artifacts = {}
-                body, _ = self.run_generation([VALID_BODY, raw], artifacts)
-                self.assertEqual(body, VALID_BODY)
-                self.assertEqual(artifacts["quality_checks"][-1]["status"], "unavailable")
+                with self.assertRaises(generate.LLMError):
+                    self.run_generation([VALID_BODY, raw], artifacts)
+                self.assertEqual(artifacts["quality_checks"][-1]["status"], "invalid")
 
     def test_fake_article_or_evidence_quote_is_rejected(self):
         for issue in (quality_issue(article="作品里并没有这句话。"),
                       quality_issue(quote="The actual accuracy was 95% for all patients.")):
             with self.subTest(issue=issue):
                 artifacts = {}
-                body, _ = self.run_generation([VALID_BODY, quality_result([issue])], artifacts)
-                self.assertEqual(body, VALID_BODY)
-                self.assertEqual(artifacts["quality_checks"][-1]["status"], "unavailable")
+                with self.assertRaises(generate.LLMError):
+                    self.run_generation([VALID_BODY, quality_result([issue])], artifacts)
+                self.assertEqual(artifacts["quality_checks"][-1]["status"], "invalid")
 
     def test_coverage_omission_allows_empty_article_quote_but_needs_evidence(self):
         issue = quality_issue(category="coverage", article="")
@@ -254,14 +261,52 @@ class TestEvidenceQualityGate(unittest.TestCase):
         with self.assertRaisesRegex(generate.LLMError, "本轮原文证据"):
             generate._validated_quality_check(quality_result([issue]), VALID_BODY, [QUOTE])
 
-    def test_bad_structure_in_quality_revision_keeps_valid_original(self):
+    def test_coverage_must_quote_the_whole_claim_sentence(self):
+        sentence = generate._claim_sentences(VALID_BODY)[0]
+        partial = sentence[:12]
+        raw = json.dumps({
+            "checked": sorted(generate._QUALITY_DIMENSIONS),
+            "issues": [],
+            "coverage": [{
+                "dimension": "finding",
+                "article_quote": partial,
+                "evidence_quote": QUOTE,
+                "fact_ids": ["RAW-CONTENT"],
+                "status": "supported",
+            }],
+        }, ensure_ascii=False)
+        with self.assertRaisesRegex(generate.LLMError, "完整匹配"):
+            generate._validated_quality_check(raw, VALID_BODY, [QUOTE])
+
+    def test_bad_structure_in_quality_revision_blocks_generation(self):
         artifacts = {}
         client = SequenceClient([VALID_BODY, quality_result([quality_issue()]), "## 引言\n只有引言。"])
-        body = generate.generate_with_llm(client, QUOTE, "M01", "某论文", 1200,
-                                           quality_check=True, artifacts=artifacts)
-        self.assertEqual(body, VALID_BODY)
+        with self.assertRaisesRegex(generate.LLMError, "修订稿未通过"):
+            generate.generate_with_llm(client, QUOTE, "M01", "某论文", 1200,
+                                       quality_check=True, artifacts=artifacts)
         self.assertEqual(artifacts["quality_checks"][-1]["status"], "revision_invalid")
         self.assertEqual(len(client.requests), 3)
+
+    def test_coverage_failure_is_revised_and_rechecked(self):
+        revised = VALID_BODY.replace(
+            "比较同一问题的多个回答，先看含义是否一致。",
+            "本次实验的成人样本准确率为80%。",
+        )
+        incomplete = json.dumps({
+            "checked": sorted(generate._QUALITY_DIMENSIONS),
+            "issues": [],
+            "coverage": [],
+        }, ensure_ascii=False)
+        artifacts = {}
+        body, client = self.run_generation(
+            [VALID_BODY, incomplete, revised, quality_result(body=revised)], artifacts
+        )
+        self.assertEqual(body, revised)
+        self.assertEqual(len(client.requests), 4)
+        self.assertEqual(
+            [check["status"] for check in artifacts["quality_checks"]],
+            ["coverage_failed", "checked"],
+        )
 
     def test_remaining_expression_advice_is_retained_without_infinite_revisions(self):
         issue = quality_issue(category="expression")

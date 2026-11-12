@@ -22,7 +22,7 @@ python -m pip install -r requirements.txt
 
 复制 `.env.example` 为 `.env`，在本地填写 `LLM_API_KEY`。也可使用同名系统环境变量；系统环境变量优先。不要把密钥写进 Python、JSON、README 或测试。`.env` 与 `.env.*` 变体不会打包，只有空值 `.env.example` 模板可通过提交检查。
 
-`config.json` 的 `llm.preset` 选择服务商预设；显式 `base_url/model` 优先。预设地址和模型名仅为配置示例，服务商可用性、模型权限及余额需要自行验证。程序使用兼容 Chat Completions 的接口，并要求完整的 `finish_reason=stop` 响应；空回复、截断回复、错误 JSON 均不会当作成功文章。
+`config.json` 的 `llm.preset` 选择服务商预设；显式 `base_url/model` 优先。预设地址和模型名仅为配置示例，服务商可用性、模型权限及余额需要自行验证。程序使用兼容 Chat Completions 的接口，只接受 `finish_reason=stop` 的非空文本回复；结束原因缺失、长度截断、过滤或工具调用等不可用响应均会失败。生成还必须通过逐句证据覆盖核查，核查失败时不会发布原稿。
 
 ## 常用命令
 

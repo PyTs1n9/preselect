@@ -217,6 +217,27 @@ class SemanticEvidenceRegressionTests(unittest.TestCase):
         context = evidence.build_semantic_review_context(client, self.CLAIM, [{"page": 1, "text": actual}])
         self.assertEqual(context["claims"][0]["candidates"][0]["text"], actual)
 
+    def test_pdf_line_end_hyphenation_is_normalized_without_accepting_new_words(self):
+        client = self.Client(lambda *_: self.payload("The flurbin appara-\n\ntus enhanced vorticity in the chamber."))
+        actual = "The flurbin apparatus enhanced vorticity in the chamber."
+        context = evidence.build_semantic_review_context(client, self.CLAIM, [{"page": 1, "text": actual}])
+        self.assertEqual(context["coverage"]["semantic_scan"]["validated_candidates"], 1)
+        self.assertEqual(context["claims"][0]["candidates"][0]["text"], actual)
+
+    def test_hyphenation_repair_still_rejects_a_quote_with_changed_meaning(self):
+        client = self.Client(lambda *_: self.payload("The flurbin apparatus prevented vorticity in the chamber."))
+        context = evidence.build_semantic_review_context(client, self.CLAIM, [{"page": 1, "text": self.QUOTE}])
+        self.assertEqual(context["coverage"]["semantic_scan"]["validated_candidates"], 0)
+        self.assertEqual(context["coverage"]["semantic_scan"]["rejected_quotes"], 1)
+
+    def test_spaced_pdf_line_end_hyphenation_matches_the_original_word(self):
+        quote = "The method was systematically misleading to readers."
+        actual = "The method was systemati- \ncally misleading to readers."
+        client = self.Client(lambda *_: self.payload(quote))
+        context = evidence.build_semantic_review_context(client, self.CLAIM, [{"page": 1, "text": actual}])
+        self.assertEqual(context["coverage"]["semantic_scan"]["validated_candidates"], 1)
+        self.assertEqual(context["claims"][0]["candidates"][0]["text"], actual)
+
     def test_negative_or_model_contradiction_remains_pending(self):
         for document, relation in [("原文未展开这种装置。", "supports"), (self.CLAIM, "contradicts")]:
             with self.subTest(document=document):

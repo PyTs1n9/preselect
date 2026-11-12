@@ -84,17 +84,6 @@ MAP_PROMPT = """下面是一份材料中的第 {index}/{total} 个片段，标�
 <<<CHUNK_END>>>"""
 
 
-LEGACY_MAP_PROMPT = """下面是一份材料中的第 {index}/{total} 个片段。
-请用简短要点提炼其中明确出现的事实，包括研究问题、方法、结果、结论和适用范围。
-每条以“- ”开头，最多{max_points}条；保留关键数值、单位和限定条件。
-不确定或无法从片段直接确认的内容不要写。
-
-【片段内容】
-<<<CHUNK_START>>>
-{chunk}
-<<<CHUNK_END>>>"""
-
-
 REDUCE_PROMPT = """下面是同一份材料各片段提取的事实记录。quote已校验确实出现在所标页，
 但引用存在不代表中文概括正确；以quote及其上下文限定为准，审查含义后写科普文章。
 
@@ -181,15 +170,25 @@ QUALITY_CHECK_PROMPT = """核查下面科普初稿与本轮生成证据的一致
 按文献类型区分实验/综述/观点，不要求观点文章提供本来不存在的实验。
 只能指出有具体证据的问题，不为凑问题而挑错。未发现则issues为空数组。
 
+除issues外，还必须输出coverage：对文章中每个包含事实、因果、比较、数值或范围判断的完整句子
+各列一条映射；纯过渡句、提问句和文章结构句可以不列。coverage中的dimension只能是problem、method、
+finding、limitation或example；article_quote必须是文章原句，
+evidence_quote必须是支持该句的连续原文；找不到支持原句的句子必须列出，status只能为unsupported，
+不得用常识补证据。只要存在unsupported或缺少映射，必须在issues中列出category=accuracy或coverage。
+
 只输出JSON：
 {{"checked":["objects_metrics","strength","negative_claims","core_coverage","boundaries","expression"],
 "issues":[{{"category":"accuracy","article_quote":"文章连续原句",
 "evidence_quote":"原文连续原句","reason":"具体问题与指标或边界",
-"suggestion":"基于该证据的修改方法"}}]}}
+"suggestion":"基于该证据的修改方法"}}],
+"coverage":[{{"dimension":"finding","article_quote":"文章中的完整事实句","evidence_quote":"支持该句的原文连续句",
+"fact_ids":["C001-F01"],"status":"supported"}}]}}
 category仅可为accuracy（事实、对象、指标、强度、否定判断错误）、coverage（核心覆盖或必要边界缺漏）、
 expression（仅影响可读性）。事实错误不能降为expression。
 article_quote必须逐字摘录文章；仅coverage缺漏项可为空。evidence_quote必须是本轮证据中
-连续原句，不得翻译或拼接。任何类别的问题均需证据。reason/suggestion不能引入新事实。
+连续原句，不得翻译或拼接；supported必须填写事实清单中对应的fact_ids，不能虚构编号。
+fact_ids必须逐字使用下方证据JSON中的id；短材料的唯一ID是RAW-CONTENT，不能套用示例编号。
+任何类别的问题均需证据。reason/suggestion不能引入新事实。
 
 【文献写作要求】
 {guidance}

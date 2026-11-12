@@ -177,16 +177,11 @@ def cmd_generate(config: dict) -> int:
             artifacts: dict = {}
             print(f"({index}/{len(mapping)}) {path.name} → {material_id}")
             try:
-                try:
-                    body = generate.generate_with_llm(client, content, material_id, source_name, target_words,
-                        pages=pages, document_type=override.get("document_type", "auto"), artifacts=artifacts,
-                        quality_check=True)
-                except generate.LLMError as strict_error:
-                    artifacts["strict_generation_error"] = str(strict_error)
-                    print(f"      [降级] 严格证据路径未完成，改用简要分片生成：{strict_error}")
-                    body = generate.generate_with_llm_legacy(client, content, material_id, source_name,
-                        target_words, document_type=override.get("document_type", "auto"))
-                    artifacts["fallback"] = "compact_map_reduce"
+                body = generate.generate_with_llm(
+                    client, content, material_id, source_name, target_words,
+                    pages=pages, document_type=override.get("document_type", "auto"),
+                    artifacts=artifacts, quality_check=True,
+                )
             except generate.LLMError as exc:
                 artifacts["generation_error"] = {"type": type(exc).__name__, "message": str(exc)}
                 raise
@@ -203,7 +198,7 @@ def cmd_generate(config: dict) -> int:
                 "source_name": source_name, "doc_file": out.name, "engine": "llm",
                 "fingerprint": extractors.fingerprint(content), "source_sha256": source_hashes[material_id],
                 "output_sha256": _sha256(out), "chars": len(document), "runtime": runtime,
-                "model": {key: llm_cfg.get(key) for key in ("model", "temperature", "max_tokens")},
+                "model": {key: llm_cfg.get(key) for key in ("model", "temperature", "max_tokens", "thinking")},
                 "document_type": artifacts.get("document_type", override.get("document_type", "auto")),
                 "generated_at": datetime.now().astimezone().isoformat(),
                 "evidence_file": f"{material_id}_evidence.json", "run_id": stamp})
@@ -362,13 +357,19 @@ class _Tee:
 
 def cmd_review(config: dict, offline: bool = False) -> int:
     captured = io.StringIO()
-    with contextlib.redirect_stdout(_Tee(sys.stdout, captured)):
-        code = _run_review(config, offline=offline)
     result_dir = SOURCE_DIR / "result"
     result_dir.mkdir(exist_ok=True)
     path = result_dir / (datetime.now().strftime("review_%Y%m%d_%H%M%S_") + uuid4().hex[:6] + ".md")
-    path.write_text(captured.getvalue(), encoding="utf-8")
-    print(f"[报告] {path}")
+    try:
+        with path.open("w", encoding="utf-8") as report:
+            with contextlib.redirect_stdout(_Tee(sys.stdout, captured, report)):
+                try:
+                    code = _run_review(config, offline=offline)
+                except KeyboardInterrupt:
+                    print("[中断] 评审未完成；已保留现有报告，不作为完整评分。")
+                    return 130
+    finally:
+        print(f"[报告] {path}")
     return code
 
 
@@ -440,7 +441,19 @@ def cmd_doctor(config: dict, dotenv_keys: list[str], offline: bool = False) -> i
     return 1 if errors else 0
 
 
+def _configure_console_encoding() -> None:
+    """Keep extracted Unicode source text printable in Windows code pages."""
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if callable(reconfigure):
+            try:
+                reconfigure(encoding="utf-8", errors="replace")
+            except (OSError, ValueError):
+                pass
+
+
 def main() -> int:
+    _configure_console_encoding()
     parser = argparse.ArgumentParser(description="专业文献科普改写：生成、证据评审、验收、打包")
     parser.add_argument("command", choices=["doctor", "generate", "review", "validate", "package", "all"])
     parser.add_argument("--offline", action="store_true", help="doctor/review只做本地检查，不调用模型")

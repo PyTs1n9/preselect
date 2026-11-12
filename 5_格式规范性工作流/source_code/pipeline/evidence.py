@@ -8,6 +8,7 @@ from __future__ import annotations
 import math
 import json
 import re
+import unicodedata
 from collections import Counter
 
 # A small, inspectable bilingual glossary, not an implicit translation model.
@@ -291,7 +292,7 @@ def _semantic_chunks(pages: list[dict], limit: int) -> list[list[dict]]:
 
 
 def _actual_quote(quote: str, source: str) -> str | None:
-    """Only whitespace may differ; return the actual contiguous source substring."""
+    """Allow whitespace and PDF line-wrap hyphenation; return original source text."""
     quote = quote.strip()
     if not 12 <= len(quote) <= 1200:
         return None
@@ -299,7 +300,60 @@ def _actual_quote(quote: str, source: str) -> str | None:
     if not tokens:
         return None
     match = re.search(r"\s+".join(re.escape(token) for token in tokens), source)
-    return match.group() if match else None
+    if match:
+        return match.group()
+    # PDF text extraction can turn a word such as ``semantic`` into
+    # ``seman-\n\ntic``. Remove only a line-end hyphen between letters, while
+    # keeping an index map so the accepted evidence remains an exact source slice.
+    def canonical(value: str, *, keep_offsets=False):
+        chars, offsets, index = [], [], 0
+        while index < len(value):
+            char = value[index]
+            if char == "\u00ad":
+                index += 1
+                continue
+            prior = index - 1
+            while prior >= 0 and value[prior].isspace():
+                prior -= 1
+            if (char in "-‐‑‒–—" and prior >= 0 and value[prior].isalpha()
+                    and re.match(r"[-‐‑‒–—][ \t\r\n]*(?=[A-Za-z])", value[index:])):
+                match = re.match(r"[-‐‑‒–—][ \t\r\n]*(?=[A-Za-z])", value[index:])
+                if chars and chars[-1].isspace():
+                    chars.pop()
+                    offsets.pop()
+                index += match.end()
+                continue
+            chars.append(char)
+            offsets.append((index, index + 1))
+            index += 1
+        collapsed, mapped, index = [], [], 0
+        while index < len(chars):
+            if chars[index].isspace():
+                first = offsets[index][0]
+                last = offsets[index][1]
+                index += 1
+                while index < len(chars) and chars[index].isspace():
+                    last = offsets[index][1]
+                    index += 1
+                collapsed.append(" ")
+                mapped.append((first, last))
+            else:
+                collapsed.append(chars[index])
+                mapped.append(offsets[index])
+                index += 1
+        normalized = "".join(collapsed)
+        return (normalized, mapped) if keep_offsets else normalized
+
+    normalized_quote = canonical(quote)
+    normalized_source, offsets = canonical(source, keep_offsets=True)
+    if not 12 <= len(normalized_quote) <= 1200:
+        return None
+    start = normalized_source.find(normalized_quote)
+    if start < 0:
+        return None
+    source_start = offsets[start][0]
+    source_end = offsets[start + len(normalized_quote) - 1][1]
+    return source[source_start:source_end]
 
 
 def build_semantic_review_context(client, document: str, pages: list[dict],

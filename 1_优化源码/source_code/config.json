@@ -3,7 +3,7 @@
   "output_dir": "docs",
   "package_name": "作品.zip",
   "llm": {
-    "preset": "mixtk",
+    "preset": "mimo_token_plan",
     "base_url": "",
     "model": "",
     "api_key_env": "LLM_API_KEY",
@@ -15,6 +15,12 @@
     "mixtk": {
       "base_url": "https://api.mixtk.com/v1",
       "model": "gpt-6.1-sol"
+    },
+    "mimo_token_plan": {
+      "base_url": "https://token-plan-cn.xiaomimimo.com/v1",
+      "model": "mimo-v2.6-pro",
+      "api_key_header": "api-key",
+      "api_key_prefix": ""
     },
     "deepseek": {
       "base_url": "https://api.deepseek.com/v1",

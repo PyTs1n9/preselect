@@ -1,0 +1,77 @@
+{
+  "materials_dir": "materials",
+  "output_dir": "docs",
+  "package_name": "作品.zip",
+  "llm": {
+    "preset": "mimo_token_plan",
+    "base_url": "",
+    "model": "",
+    "api_key_env": "LLM_API_KEY",
+    "temperature": 0.3,
+    "max_tokens": 8192,
+    "timeout": 180
+  },
+  "llm_presets": {
+    "mixtk": {
+      "base_url": "https://api.mixtk.com/v1",
+      "model": "gpt-6.1-sol"
+    },
+    "mimo_token_plan": {
+      "base_url": "https://token-plan-cn.xiaomimimo.com/v1",
+      "model": "mimo-v2.6-pro",
+      "api_key_header": "api-key",
+      "api_key_prefix": ""
+    },
+    "deepseek": {
+      "base_url": "https://api.deepseek.com",
+      "model": "deepseek-v4-flash",
+      "thinking": "disabled"
+    },
+    "dashscope": {
+      "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      "model": "qwen-plus"
+    },
+    "zhipu": {
+      "base_url": "https://open.bigmodel.cn/api/paas/v4",
+      "model": "glm-4-flash"
+    },
+    "moonshot": {
+      "base_url": "https://api.moonshot.cn/v1",
+      "model": "moonshot-v1-8k"
+    }
+  },
+  "document": {
+    "target_words": 2000,
+    "overrides": {
+      "AI-01": {
+        "title": "AI回答靠谱吗？用“语义熵”识别摇摆不定的答案",
+        "source": "Farquhar S, Kossen J, Kuhn L, Gal Y. Detecting hallucinations in large language models using semantic entropy. Nature, 2024, 630: 625-633. DOI: 10.1038/s41586-024-07421-0",
+        "document_type": "research"
+      },
+      "BIO-02": {
+        "title": "mRNA疫苗：给细胞的“生产说明”怎样训练免疫系统",
+        "source": "Pardi N, Krammer F. mRNA vaccines for infectious diseases — advances, challenges and opportunities. Nature Reviews Drug Discovery, 2024, 23(11): 838-861. DOI: 10.1038/s41573-024-01042-y",
+        "document_type": "review"
+      },
+      "IND-03": {
+        "title": "数字孪生：电脑里的分身怎样帮助维护现实设备",
+        "source": "Ding P, Liu SQ, Chiong R, et al. A review of digital twins in smart industries: Concepts, milestones, trends, applications, opportunities and challenges. Computers in Industry, 2026, 174: 104398. DOI: 10.1016/j.compind.2025.104398",
+        "document_type": "review"
+      },
+      "MED-04": {
+        "title": "医疗AI怎样从“看一种病”走向“理解健康”？",
+        "source": "Ma W, Sheng B, Liu Y, et al. Evolution of Future Medical AI Models — From Task-Specific, Disease-Centric to Universal Health. NEJM AI, 2024, 1(8). DOI: 10.1056/AIp2400289",
+        "document_type": "perspective"
+      }
+    }
+  },
+  "review": {
+    "required_material_ids": [
+      "AI-01",
+      "BIO-02",
+      "IND-03",
+      "MED-04"
+    ],
+    "evidence_max_chars": 32000
+  }
+}

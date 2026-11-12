@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 import tempfile
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import main
 from pipeline import generate
@@ -40,6 +40,27 @@ class WorkflowTests(unittest.TestCase):
     def run_generate(self):
         with contextlib.redirect_stdout(io.StringIO()):
             return main.cmd_generate(self.config)
+
+    def test_console_streams_are_configured_for_utf8(self):
+        stdout, stderr = Mock(), Mock()
+        with patch("sys.stdout", stdout), patch("sys.stderr", stderr):
+            main._configure_console_encoding()
+        stdout.reconfigure.assert_called_once_with(encoding="utf-8", errors="replace")
+        stderr.reconfigure.assert_called_once_with(encoding="utf-8", errors="replace")
+
+    def test_interrupted_review_keeps_partial_report_and_returns_failure(self):
+        def interrupted(*args, **kwargs):
+            print("AI-01 已评审；其余文章未完成", flush=True)
+            raise KeyboardInterrupt
+
+        with patch.object(main, "_run_review", side_effect=interrupted):
+            with contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(main.cmd_review(self.config), 130)
+        reports = list((self.source / "result").glob("review_*.md"))
+        self.assertEqual(len(reports), 1)
+        text = reports[0].read_text(encoding="utf-8")
+        self.assertIn("AI-01 已评审", text)
+        self.assertIn("评审未完成", text)
 
     def test_api_failure_preserves_previous_documents(self):
         with patch.object(generate, "generate_with_llm", side_effect=generate.LLMError("模拟失败")):

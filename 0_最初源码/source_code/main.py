@@ -373,11 +373,15 @@ def _probe_llm(llm_cfg: dict, key: str) -> tuple[str, str]:
         return "warn", "缺少 requests，已跳过连通性测试"
 
     url = f"{str(llm_cfg.get('base_url', '')).rstrip('/')}/chat/completions"
+    auth_header = str(llm_cfg.get("api_key_header") or "Authorization").strip()
+    auth_prefix = llm_cfg.get("api_key_prefix")
+    if auth_prefix is None:
+        auth_prefix = "Bearer " if auth_header.lower() == "authorization" else ""
     try:
         resp = requests.post(
             url,
             headers={
-                "Authorization": f"Bearer {key}",
+                auth_header: f"{auth_prefix}{key}",
                 "Content-Type": "application/json",
             },
             json={

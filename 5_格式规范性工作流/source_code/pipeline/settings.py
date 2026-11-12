@@ -79,6 +79,9 @@ def resolve_llm(config: dict) -> tuple[dict, str, str]:
         llm["base_url"] = preset.get("base_url", "")
     if not llm.get("model"):
         llm["model"] = preset.get("model", "")
+    for key in ("api_key_header", "api_key_prefix"):
+        if key not in llm and key in preset:
+            llm[key] = preset[key]
     return llm, name, note
 
 

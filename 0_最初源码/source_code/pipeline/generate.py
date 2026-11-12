@@ -44,6 +44,11 @@ class LLMClient:
         self.base_url = (cfg.get("base_url") or "").rstrip("/")
         self.model = cfg.get("model") or ""
         self.api_key_env = cfg.get("api_key_env") or "LLM_API_KEY"
+        self.api_key_header = str(cfg.get("api_key_header") or "Authorization").strip()
+        prefix = cfg.get("api_key_prefix")
+        if prefix is None:
+            prefix = "Bearer " if self.api_key_header.lower() == "authorization" else ""
+        self.api_key_prefix = str(prefix)
         self.temperature = float(cfg.get("temperature", 0.3))
         self.max_tokens = int(cfg.get("max_tokens", 4096))
         self.timeout = int(cfg.get("timeout", 180))
@@ -69,7 +74,7 @@ class LLMClient:
 
         url = f"{self.base_url}/chat/completions"
         headers = {
-            "Authorization": f"Bearer {self._api_key()}",
+            self.api_key_header: f"{self.api_key_prefix}{self._api_key()}",
             "Content-Type": "application/json",
         }
         payload = {
