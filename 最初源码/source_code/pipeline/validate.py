@@ -102,8 +102,8 @@ def check_documents(docs_dir: Path, materials_dir: Path, report: Report) -> None
             p
             for p in materials_dir.iterdir()
             if p.is_file()
-            and not p.name.startswith(".")
-            and p.suffix.lower() in extractors.SUPPORTED_SUFFIXES
+               and not p.name.startswith(".")
+               and p.suffix.lower() in extractors.SUPPORTED_SUFFIXES
         ]
         if materials_dir.exists()
         else []
