@@ -1,0 +1,3 @@
+# Local credentials. The repository root already ignores **/.env; this file
+# keeps the rule visible when source_code/ is used on its own.
+.env
