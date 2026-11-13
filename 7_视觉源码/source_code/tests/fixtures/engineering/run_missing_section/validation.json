@@ -1,0 +1,42 @@
+{
+  "valid": false,
+  "schema_version": "1.1.0",
+  "checked_at": "2026-11-13T13:51:41.813897Z",
+  "stats": {
+    "han_chars": 2663,
+    "citations": 0,
+    "evidence_count": 1,
+    "unreferenced_evidence": 0
+  },
+  "issues": [
+    {
+      "code": "MD_MISSING_SECTION",
+      "stage": "validate",
+      "path": "final.md#总结",
+      "severity": "error",
+      "message": "Required Markdown section is missing or empty",
+      "hint": ""
+    }
+  ],
+  "checks": {
+    "enabled": [
+      "SCHEMA_INVALID",
+      "SCHEMA_NOT_FOUND",
+      "SCHEMA_VERSION_MISMATCH",
+      "ASSET_MISSING",
+      "MD_MISSING_SECTION",
+      "MD_BODY_TOO_SHORT",
+      "MD_BODY_TOO_LONG",
+      "MD_BAD_ENCODING",
+      "SECRET_LEAK",
+      "ABS_PATH_LEAK"
+    ],
+    "skipped": [
+      "CITE_NOT_IN_EVIDENCE",
+      "EVIDENCE_UNREFERENCED",
+      "NUMBER_MISMATCH",
+      "UNIT_MISSING",
+      "MATERIAL_MISMATCH"
+    ]
+  }
+}

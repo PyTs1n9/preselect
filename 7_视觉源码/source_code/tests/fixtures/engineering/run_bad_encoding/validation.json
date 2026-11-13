@@ -1,0 +1,42 @@
+{
+  "valid": false,
+  "schema_version": "1.1.0",
+  "checked_at": "2026-11-13T13:51:41.813138Z",
+  "stats": {
+    "han_chars": 2675,
+    "citations": 0,
+    "evidence_count": 1,
+    "unreferenced_evidence": 0
+  },
+  "issues": [
+    {
+      "code": "MD_BAD_ENCODING",
+      "stage": "validate",
+      "path": "final.md",
+      "severity": "error",
+      "message": "Markdown contains a UTF-8 BOM",
+      "hint": ""
+    }
+  ],
+  "checks": {
+    "enabled": [
+      "SCHEMA_INVALID",
+      "SCHEMA_NOT_FOUND",
+      "SCHEMA_VERSION_MISMATCH",
+      "ASSET_MISSING",
+      "MD_MISSING_SECTION",
+      "MD_BODY_TOO_SHORT",
+      "MD_BODY_TOO_LONG",
+      "MD_BAD_ENCODING",
+      "SECRET_LEAK",
+      "ABS_PATH_LEAK"
+    ],
+    "skipped": [
+      "CITE_NOT_IN_EVIDENCE",
+      "EVIDENCE_UNREFERENCED",
+      "NUMBER_MISMATCH",
+      "UNIT_MISSING",
+      "MATERIAL_MISMATCH"
+    ]
+  }
+}
