@@ -1,0 +1,54 @@
+{
+  "probed_at": "2026-11-13T23:29:10+08:00",
+  "sdk": {
+    "version": "0.169.0",
+    "pinned_runtime_version": "0.169.0",
+    "path_codex_version": "codex-cli 0.167.0"
+  },
+  "runtime": {
+    "started": true,
+    "initialize_ok": true
+  },
+  "auth": {
+    "ok": false,
+    "account_class": "AUTH_MISSING"
+  },
+  "provider": {
+    "model_provider": "llm",
+    "base_url_host": "api.mixtk.com",
+    "wire_api": "responses",
+    "ok": true,
+    "error_class": null
+  },
+  "models_visible": [
+    "gpt-6.1-sol",
+    "gpt-6-astra",
+    "gpt-6-sol",
+    "gpt-6-luna",
+    "gpt-5.6-sol",
+    "gpt-6.1-terra",
+    "gpt-5.6-terra",
+    "gpt-5.6-luna",
+    "gpt-5.5"
+  ],
+  "structured_output": {
+    "output_schema_ok": true,
+    "parsed_ok": true
+  },
+  "vision": {
+    "local_image": true,
+    "skill_input": true
+  },
+  "interrupt": {
+    "supported": true,
+    "latency_ms": 2
+  },
+  "truncation": {
+    "status_observable": true,
+    "usage_observable": true
+  },
+  "decision": {
+    "vision_path": "image_png",
+    "skill_transport": "skill_input"
+  }
+}
