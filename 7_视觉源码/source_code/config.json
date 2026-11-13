@@ -1,15 +1,25 @@
 {
-  "version": 1,
+  "version": 2,
   "vision": {
-    "provider": "openai",
-    "model": "gpt-4.1-mini",
-    "temperature": 0
+    "provider": "openai_codex",
+    "model": "",
+    "base_url": "",
+    "wire_api": "responses",
+    "timeout_s": 120,
+    "max_retries": 2,
+    "dpi": 200,
+    "effort": "medium"
   },
   "pipeline": {
     "max_repair_attempts": 2,
-    "keep_intermediate": true
+    "keep_intermediate": true,
+    "body_min_han": 2500,
+    "body_max_han": 4000
   },
   "paths": {
-    "result_dir": "result/runs"
+    "result_dir": "result/runs",
+    "prompts_dir": "prompts",
+    "skills_dir": "skills",
+    "fixtures_dir": "fixtures/quality"
   }
 }

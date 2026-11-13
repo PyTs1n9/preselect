@@ -1,0 +1,33 @@
+# 文件占用登记
+
+规则：开工前追加一行；交付后把状态改为「已释放」，不删行。
+发现目标文件已被他人标记「占用中」→ 停止，报告 S0，不得抢写。
+一次最多占用 3 个文件；占而不用超过 40 分钟视为放弃，S0 可回收。
+
+| 卡号 | 会话 | 文件 | 开始时间 | 状态 |
+|---|---|---|---|---|
+| W0 | S0 | source_code/pipeline/errors.py | 2026-11-13 | 已释放 |
+| W0 | S0 | source_code/pipeline/contracts.py | 2026-11-13 | 已释放 |
+| W0 | S0 | source_code/schemas/validation.schema.json | 2026-11-13 | 已释放 |
+
+| W0 | S0 | source_code/pipeline/settings.py | 2026-11-13 | 已释放 |
+| W0 | S0 | source_code/pipeline/schema_loader.py | 2026-11-13 | 已释放 |
+| W0 | S0 | source_code/config.json | 2026-11-13 | 已释放 |
+
+| W0 | S0 | source_code/pipeline/manifest.py | 2026-11-13 | 已释放 |
+| W0 | S0 | source_code/pipeline/orchestrator.py | 2026-11-13 | 已释放 |
+| W0 | S0 | source_code/main.py | 2026-11-13 | 已释放 |
+
+| A6+A7 | S1 | source_code/pipeline/pdf_input.py | 2026-11-13 20:48 | 占用中 |
+| A6+A7 | S1 | source_code/pipeline/codex_adapter.py | 2026-11-13 20:48 | 占用中 |
+| A6+A7 | S1 | source_code/pipeline/vision_provider.py | 2026-11-13 20:48 | 占用中 |
+| A6+A7 | S1 | source_code/tests/test_engineering_input.py | 2026-11-13 20:48 | 占用中 |
+
+## 契约变更申请
+
+> 需要改 `contracts.py` / `errors.py` 枚举 / `settings.py` 字段 / `config.json` 键 /
+> `requirements.txt` 时，在此登记，等 S0 裁决后由 S0 执行。**不得自行修改。**
+
+| 申请方 | 目标文件 | 变更内容 | 理由 | 裁决 |
+|---|---|---|---|---|
+| S0 | W0 共享内核 | 按本次用户明确指令完成 W0，包括 validation 的 issues 对齐 | 用户再次明确“你来采用最优解修复W0范围” | 本次 W0 执行授权；不代表 A/B 已双签，不代签；其余业务 schema 不改 |

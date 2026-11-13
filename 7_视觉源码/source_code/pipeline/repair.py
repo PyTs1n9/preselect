@@ -1,12 +1,9 @@
-"""Bounded repair loop for schema-invalid model output."""
+"""W0 repair boundary; bounded repair is implemented by A11."""
 
-from typing import Any, Callable
+from pathlib import Path
+
+from .contracts import RunContext, StageResult
 
 
-def repair(value: dict[str, Any], validate: Callable[[dict[str, Any]], dict[str, Any]], max_attempts: int = 2) -> dict[str, Any]:
-    current = value
-    for _ in range(max_attempts + 1):
-        result = validate(current)
-        if result.get("valid"):
-            return current
-    raise ValueError("Unable to repair document within the configured attempt limit")
+def repair_draft(draft_path: Path, validation_path: Path, ctx: RunContext) -> StageResult:
+    raise NotImplementedError("Draft repair is assigned to A11")

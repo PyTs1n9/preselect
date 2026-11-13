@@ -1,11 +1,162 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "validation.schema.json",
+  "schema_version": "1.1.0",
   "type": "object",
-  "required": ["valid", "errors"],
+  "required": [
+    "valid",
+    "schema_version",
+    "checked_at",
+    "stats",
+    "issues",
+    "checks"
+  ],
   "properties": {
-    "valid": {"type": "boolean"},
-    "errors": {"type": "array", "items": {"type": "string"}}
+    "valid": {
+      "description": "True only when no enabled check produced an error. Read together with checks.skipped: valid=true never means all eight checks ran.",
+      "type": "boolean"
+    },
+    "schema_version": {
+      "const": "1.1.0"
+    },
+    "checks": {
+      "description": "Which deterministic checks actually ran. A code listed in skipped MUST NOT be reported as passing.",
+      "type": "object",
+      "required": [
+        "enabled",
+        "skipped"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "skipped": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "checked_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "stats": {
+      "type": "object",
+      "properties": {
+        "han_chars": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "citations": {
+          "description": "Number of in-text citation markers resolved against evidence. Fixed at 0 while CITE_NOT_IN_EVIDENCE is listed in checks.skipped; not a measurement of the document.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "evidence_count": {
+          "description": "Number of schema-valid evidence objects. The current evidence schema describes a single object, so this is 0 or 1 — not the number of facts.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "unreferenced_evidence": {
+          "description": "Number of core facts never cited in the body. Fixed at 0 while EVIDENCE_UNREFERENCED is listed in checks.skipped.",
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "issues": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "code",
+          "stage",
+          "path",
+          "severity",
+          "message",
+          "hint"
+        ],
+        "properties": {
+          "code": {
+            "enum": [
+              "SCHEMA_INVALID",
+              "SCHEMA_NOT_FOUND",
+              "SCHEMA_VERSION_MISMATCH",
+              "ASSET_MISSING",
+              "ASSET_EMPTY",
+              "ASSET_NO_VERSION",
+              "PDF_ENCRYPTED",
+              "PDF_EMPTY",
+              "PDF_TOO_LARGE",
+              "PDF_RENDER_FAILED",
+              "MODEL_TIMEOUT",
+              "MODEL_TRUNCATED",
+              "MODEL_INVALID_JSON",
+              "MODEL_REFUSED",
+              "IR_MISSING_PAGE",
+              "IR_MISSING_BLOCK_ID",
+              "IR_PAGE_OUT_OF_RANGE",
+              "MD_MISSING_SECTION",
+              "MD_BODY_TOO_SHORT",
+              "MD_BODY_TOO_LONG",
+              "MD_BAD_ENCODING",
+              "CITE_NOT_IN_EVIDENCE",
+              "EVIDENCE_UNREFERENCED",
+              "NUMBER_MISMATCH",
+              "UNIT_MISSING",
+              "MATERIAL_MISMATCH",
+              "SECRET_LEAK",
+              "ABS_PATH_LEAK",
+              "REPAIR_EXHAUSTED",
+              "REPAIR_INTRODUCED_FACT"
+            ]
+          },
+          "stage": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "severity": {
+            "enum": [
+              "error",
+              "warning"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "hint": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    }
   },
-  "additionalProperties": true
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "issues": {
+            "contains": {
+              "type": "object",
+              "required": ["severity"],
+              "properties": {"severity": {"const": "error"}}
+            }
+          }
+        }
+      },
+      "then": {"properties": {"valid": {"const": false}}},
+      "else": {"properties": {"valid": {"const": true}}}
+    }
+  ],
+  "additionalProperties": false
 }

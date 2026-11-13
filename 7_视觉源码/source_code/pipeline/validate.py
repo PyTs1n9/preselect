@@ -16,6 +16,17 @@ from .contracts import ValidationReport
 from .errors import Code, IoFailure, Issue, PipelineError
 from .settings import Settings
 
+# Single source of truth for the Markdown structure. B owns the wording, but
+# the checker must not guess: a numbered heading such as "1. 引言" is reported
+# as missing, and the hint tells B the exact frozen text instead of relaxing
+# the check silently.
+SOURCE_SECTION = "来源"
+REQUIRED_SECTIONS = ("引言", "正文", "总结", SOURCE_SECTION)
+SECTION_HINT = (
+    "标题必须是一级标题；章节标题必须逐字为「引言」「正文」「总结」「来源」，"
+    "不得添加编号、前缀或其他变体"
+)
+
 
 def _issue(code: Code, path: str, message: str, hint: str = "") -> Issue:
     # Messages are authored here, never interpolated from artifact contents.
@@ -84,7 +95,7 @@ def _without_sources(lines: list[str]) -> list[str]:
     result = list(lines)
     headings = _headings(lines)
     for index, (start, level, title, _) in enumerate(headings):
-        if title == "来源":
+        if title == SOURCE_SECTION:
             end = next((pos for pos, depth, _, _ in headings[index + 1 :] if depth <= level), len(lines))
             result[start:end] = [""] * (end - start)
     # Setext underlines carry no visible content.
@@ -124,8 +135,9 @@ def _check_markdown(raw: bytes, settings: Settings, name: str) -> tuple[list[Iss
     lines = _markdown_lines(text)
     headings = _headings(lines)
     if not any(level == 1 and title for _, level, title, _ in headings):
-        issues.append(_issue(Code.MD_MISSING_SECTION, name + "#title", "Markdown requires a nonempty level-one title"))
-    for section in ("引言", "正文", "总结", "来源"):
+        issues.append(_issue(Code.MD_MISSING_SECTION, name + "#title",
+                             "Markdown requires a nonempty level-one title", SECTION_HINT))
+    for section in REQUIRED_SECTIONS:
         nonempty = False
         for index, (start, level, title, size) in enumerate(headings):
             if title != section:
@@ -141,7 +153,8 @@ def _check_markdown(raw: bytes, settings: Settings, name: str) -> tuple[list[Iss
             if _inline_text("\n".join(content)).strip():
                 nonempty = True
         if not nonempty:
-            issues.append(_issue(Code.MD_MISSING_SECTION, name + "#" + section, "Required Markdown section is missing or empty"))
+            issues.append(_issue(Code.MD_MISSING_SECTION, name + "#" + section,
+                                 "Required Markdown section is missing or empty", SECTION_HINT))
     han_chars = count_han(text)
     if han_chars < settings.pipeline.body_min_han:
         issues.append(_issue(Code.MD_BODY_TOO_SHORT, name + "#body", "Han character count is below the configured minimum"))

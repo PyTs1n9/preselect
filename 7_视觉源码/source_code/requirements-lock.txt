@@ -1,3 +1,7 @@
-jsonschema==4.23.0
-pypdf==5.1.0
-python-dotenv==1.0.1
+jsonschema==4.23.0  # deterministic JSON Schema validation
+pypdf==5.1.0  # PDF metadata and input inspection
+python-dotenv==1.0.1  # dotenv-compatible configuration source
+pytest==8.3.3  # engineering test runner
+openai-codex==0.169.0  # Codex SDK: drives the local app-server over JSON-RPC
+pypdfium2==4.30.0  # deterministic PDF page rendering
+pillow==12.3.0  # required by pypdfium2 bitmap.to_pil(); not optional
