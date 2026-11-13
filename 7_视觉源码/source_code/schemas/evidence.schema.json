@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "evidence.schema.json",
+  "type": "object",
+  "required": ["page_number"],
+  "properties": {
+    "page_number": {"type": "integer", "minimum": 1},
+    "region": {"type": "object"},
+    "quote": {"type": "string"}
+  },
+  "additionalProperties": true
+}

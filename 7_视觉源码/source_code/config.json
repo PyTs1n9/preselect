@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "vision": {
+    "provider": "openai",
+    "model": "gpt-4.1-mini",
+    "temperature": 0
+  },
+  "pipeline": {
+    "max_repair_attempts": 2,
+    "keep_intermediate": true
+  },
+  "paths": {
+    "result_dir": "result/runs"
+  }
+}

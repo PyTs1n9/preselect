@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "document_ir.schema.json",
+  "type": "object",
+  "required": ["document_id", "source", "pages", "blocks"],
+  "properties": {
+    "document_id": {"type": "string", "minLength": 1},
+    "source": {"type": "object"},
+    "pages": {"type": "array"},
+    "blocks": {"type": "array"}
+  },
+  "additionalProperties": true
+}

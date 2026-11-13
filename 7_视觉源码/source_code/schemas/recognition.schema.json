@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "recognition.schema.json",
+  "type": "object",
+  "required": ["pages"],
+  "properties": {
+    "pages": {"type": "array", "items": {"type": "object"}},
+    "raw_text": {"type": "string"}
+  },
+  "additionalProperties": true
+}
