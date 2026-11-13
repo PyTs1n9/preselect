@@ -2,8 +2,8 @@
   "version": 2,
   "vision": {
     "provider": "openai_codex",
-    "model": "",
-    "base_url": "",
+    "model": "mimo-v2.6-pro",
+    "base_url": "https://token-plan-cn.xiaomimimo.com/v1",
     "wire_api": "responses",
     "timeout_s": 120,
     "max_retries": 2,
