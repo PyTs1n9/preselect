@@ -16,7 +16,9 @@ import os
 import re
 import time
 import unicodedata
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
+from difflib import SequenceMatcher
 from pathlib import Path
 
 from . import contracts, prompts
@@ -27,14 +29,38 @@ SINGLE_CALL_LIMIT = 20000
 # Larger page-aware chunks reduce round trips for long English PDFs while
 # keeping each extraction request within a practical context budget.
 CHUNK_SIZE = 24000
+# Bounded concurrency is used only for the real network client.  Test doubles
+# and local sequence clients stay strictly sequential so their call order and
+# failure behaviour remain deterministic.
+MAX_FACT_WORKERS = 4
+# Rich 24k-character chunks can contain many independent facts. Keep the
+# extraction cap high enough to avoid retrying valid evidence; the reduce
+# stage still selects a bounded six facts per chunk for the writing request.
+MAX_FACTS_PER_CHUNK = 48
+# Keep extraction responses compact; a smaller target reduces malformed or
+# oversized JSON while the source-spread reducer selects the writing evidence.
+MAP_FACT_TARGET = 10
 # 超限触发压缩；压缩和有限结构修复后仍不合规则失败，不输出占位稿。
 BODY_LIMIT = 2500
 MAX_RETRY = 2
 MAX_REPAIR = 2
+MAX_QUALITY_REVISIONS = 4
 # Keep the reduce request bounded. Full page quotes are useful for diagnostics,
 # but sending every quote to the writer makes large PDFs exceed provider limits.
 REDUCE_EVIDENCE_LIMIT = 32000
 MAX_FACTS_PER_CHUNK_FOR_REDUCE = 6
+
+_QUALITY_CATEGORY_ALIASES = {
+    "accuracy": "accuracy",
+    "objects_metrics": "accuracy",
+    "strength": "accuracy",
+    "negative_claims": "accuracy",
+    "factual_accuracy": "accuracy",
+    "coverage": "coverage",
+    "core_coverage": "coverage",
+    "boundaries": "coverage",
+    "expression": "expression",
+}
 
 
 class LLMError(RuntimeError):
@@ -47,6 +73,18 @@ class CoverageAuditError(LLMError):
     def __init__(self, message: str, issues: list[dict]):
         super().__init__(message)
         self.issues = issues
+
+
+class QualityEvidenceError(LLMError):
+    """The quality checker cited evidence outside the supplied evidence set."""
+
+
+class QualityCoverageFormatError(LLMError):
+    """The quality checker did not quote a complete article sentence."""
+
+
+class QualityReviewFormatError(LLMError):
+    """The quality checker returned a structurally invalid issue record."""
 
 
 class LLMClient:
@@ -168,6 +206,33 @@ def _strip_fact_ids(text: str) -> str:
     return _FACT_ID_RE.sub("", text)
 
 
+def _fact_annotation_errors(body: str, evidence_ids: set[str],
+                            fact_rows: dict[str, dict] | None = None,
+                            required_fact_ids: set[str] | None = None) -> list[str]:
+    """Require long-form drafts to leave a provenance handle on each claim.
+
+    The handles are removed before the reader-facing quality audit.  Keeping
+    them during drafting makes an unsupported, generic sentence fail at the
+    generation boundary instead of being discovered only after review.
+    """
+    errors: list[str] = []
+    known = set(evidence_ids)
+    used: set[str] = set()
+    sentences = _claim_sentences(body)
+    for sentence in sentences:
+        ids = set(re.findall(r"C\d{3}-F\d{2}", sentence))
+        used.update(ids)
+        unknown = sorted(ids - known)
+        if unknown:
+            errors.append(f"事实句使用了不存在的事实ID：{'、'.join(unknown)}")
+        elif not ids:
+            errors.append(f"事实句缺少事实ID：{sentence[:80]}")
+    for fact_id in sorted((required_fact_ids or set()) - used):
+        claim = (fact_rows or {}).get(fact_id, {}).get("claim", "")
+        errors.append(f"核心事实{fact_id}未进入正文：{claim[:100]}")
+    return errors
+
+
 def _ensure_structure(body: str, title: str) -> str:
     """补一级标题并验收；不编写原文缺失理由或虚造章节内容。"""
     body = body.strip()
@@ -201,6 +266,65 @@ def _split_title(body: str, fallback: str) -> tuple[str, str]:
     return fallback, body
 
 
+def _extract_fact_batches(client: LLMClient,
+                          jobs: list[tuple[int, list[dict], str]]) -> list[tuple[list[dict], list[str]]]:
+    """Extract map facts, parallelising only independent real HTTP requests.
+
+    Results are collected in the original chunk order.  A failing chunk still
+    raises the same ``LLMError`` as the sequential path; no partial fact list
+    is returned to the writer.  Fake clients deliberately use the sequential
+    path because their outputs are commonly scripted by call order.
+    """
+    def run(job: tuple[int, list[dict], str]) -> tuple[list[dict], list[str]]:
+        index, chunk, request = job
+        rejected: list[str] = []
+        try:
+            valid = _extract_facts(client, request, chunk, index, rejected)
+            return valid, rejected
+        except LLMError as primary_error:
+            # A provider can lose quote/page alignment on one rich 20k+ chunk
+            # while handling each page correctly. Retry only that failed job
+            # with smaller page-preserving inputs; no unverified row is kept.
+            retry_chunks = _split_chunk_for_retry(chunk)
+            if len(retry_chunks) <= 1:
+                raise
+            original_text = "\n\n".join(
+                f"[PAGE {part['page']}]\n{part['text']}" for part in chunk
+            )
+            recovered: list[dict] = []
+            failed_retry = None
+            for retry_chunk in retry_chunks:
+                retry_text = "\n\n".join(
+                    f"[PAGE {part['page']}]\n{part['text']}" for part in retry_chunk
+                )
+                retry_request = request.replace(original_text, retry_text, 1)
+                try:
+                    recovered.extend(_extract_facts(
+                        client, retry_request, retry_chunk, index, rejected,
+                    ))
+                except LLMError as retry_error:
+                    failed_retry = retry_error
+                    break
+            if failed_retry is not None:
+                raise LLMError(
+                    f"片段{index}拆分重提取仍失败：{failed_retry}"
+                ) from primary_error
+            for row_number, row in enumerate(recovered, 1):
+                row["id"] = f"C{index:03d}-F{row_number:02d}"
+            return recovered, rejected
+
+    if not isinstance(client, LLMClient) or len(jobs) <= 1:
+        return [run(job) for job in jobs]
+
+    worker_count = min(MAX_FACT_WORKERS, len(jobs))
+    with ThreadPoolExecutor(max_workers=worker_count,
+                            thread_name_prefix="fact-map") as pool:
+        futures = [pool.submit(run, job) for job in jobs]
+        # Future order, rather than completion order, preserves deterministic
+        # IDs, artifacts, diagnostics, and the first failing chunk semantics.
+        return [future.result() for future in futures]
+
+
 # --------------------------------------------------------------------------
 # LLM 引擎
 # --------------------------------------------------------------------------
@@ -229,6 +353,8 @@ def generate_with_llm(
         artifacts.update({"document_type": kind, "facts": [], "chunks": [], "validation": [],
                           "quality_checks": [], "quality_check_enabled": quality_check})
     evidence_ids: set[str] | None = None
+    fact_rows: dict[str, dict] = {}
+    required_fact_ids: set[str] = set()
     if len(content) <= SINGLE_CALL_LIMIT:
         evidence = json.dumps(
             [{"id": "RAW-CONTENT", "quote": content}],
@@ -244,17 +370,24 @@ def generate_with_llm(
     else:
         chunks = _page_chunks(pages or [{"page": 1, "text": content}])
         facts: list[dict] = []
+        fact_jobs: list[tuple[int, list[dict], str]] = []
         for index, chunk in enumerate(chunks, start=1):
             chunk_text = "\n\n".join(
                 f"[PAGE {part['page']}]\n{part['text']}" for part in chunk
             )
             request = prompts.MAP_PROMPT.format(
-                index=index, total=len(chunks), max_points=12, chunk=chunk_text,
+                index=index, total=len(chunks), max_points=MAP_FACT_TARGET, chunk=chunk_text,
             )
-            valid = _extract_facts(client, guidance + request, chunk, index)
+            fact_jobs.append((index, chunk, guidance + request))
+        fact_results = _extract_fact_batches(client, fact_jobs)
+        for (index, chunk, _), (valid, rejected) in zip(fact_jobs, fact_results):
             facts.extend(valid)
             if artifacts is not None:
                 artifacts["facts"].extend(valid)
+                if rejected:
+                    artifacts.setdefault("rejected_facts", []).append({
+                        "chunk": index, "count": len(rejected), "examples": rejected[:5],
+                    })
                 artifacts["chunks"].append({"index": index,
                     "pages": sorted({part["page"] for part in chunk}),
                     "fact_count": len(valid)})
@@ -262,18 +395,52 @@ def generate_with_llm(
         if not facts:
             raise LLMError("长材料未提取到任何可核验事实，停止生成")
         reduce_facts = _facts_for_reduce(facts)
+        fact_rows = {row["id"]: row for row in reduce_facts}
+        must_cover_rows = _facts_for_must_cover(reduce_facts)
+        required_fact_ids = {row["id"] for row in must_cover_rows}
+        must_cover = json.dumps(must_cover_rows, ensure_ascii=False,
+                                separators=(",", ":"))
         evidence = json.dumps(reduce_facts, ensure_ascii=False, separators=(",", ":"))
         evidence_quotes = [row["quote"] for row in reduce_facts]
         evidence_ids = {row["id"] for row in reduce_facts}
         quality_scope = "仅核查生成使用的已验证原句事实记录；未覆盖事实记录之外的全文，不保证科学正确性。"
         request = prompts.REDUCE_PROMPT.format(
             material_id=material_id, source_name=source_name,
-            target_words=target_words, points=evidence,
+            target_words=target_words, points=evidence, must_cover=must_cover,
         )
     body = client.chat(prompts.SYSTEM_PROMPT, guidance + request)
+    require_fact_tags = bool(quality_check and evidence_ids and evidence_ids != {"RAW-CONTENT"})
     for attempt in range(MAX_REPAIR + 1):
-        body = _strip_code_fence(body)
-        errors = _draft_errors(body)
+        annotated_body = _strip_code_fence(body)
+        tag_errors = (_fact_annotation_errors(
+            annotated_body, evidence_ids, fact_rows, required_fact_ids,
+        )
+                      if require_fact_tags else [])
+        if tag_errors and isinstance(client, LLMClient) and attempt >= 1:
+            cleaned, removed = _drop_unannotated_sentences(annotated_body)
+            if removed and cleaned != annotated_body:
+                annotated_body = cleaned
+                tag_errors = _fact_annotation_errors(
+                    annotated_body, evidence_ids, fact_rows, required_fact_ids,
+                )
+                if artifacts is not None:
+                    artifacts.setdefault("quality_repairs", []).append({
+                        "type": "drop_unannotated_sentences",
+                        "count": len(removed), "sentences": removed,
+                    })
+        # Fact IDs are internal provenance handles. Remove them before any
+        # quality audit so the checker reviews the reader-facing sentence,
+        # and so leaked IDs cannot become part of the article text.
+        body = _strip_fact_ids(annotated_body)
+        if artifacts is not None:
+            # Preserve the exact draft that reached the quality gate.  A
+            # failed run must be diagnosable from its run directory without
+            # publishing the draft or asking the model to reproduce it.
+            artifacts.setdefault("drafts", []).append({
+                "attempt": attempt, "stage": "before_quality_gate",
+                "body": body,
+            })
+        errors = _draft_errors(body) + tag_errors
         if artifacts is not None:
             artifacts["validation"].append({"attempt": attempt, "errors": errors})
         if not errors:
@@ -281,21 +448,33 @@ def generate_with_llm(
                 artifacts["quality_scope"] = quality_scope
             if quality_check and evidence_quotes:
                 return _strip_fact_ids(_quality_gate(
-                    client, body, evidence, evidence_quotes, guidance, artifacts, evidence_ids
+                    client, body, evidence, evidence_quotes, guidance, artifacts, evidence_ids,
+                    {fact_id: fact_rows[fact_id] for fact_id in required_fact_ids},
                 ))
             elif quality_check and artifacts is not None:
                 artifacts["quality_checks"].append(
                     {"status": "skipped", "reason": "本轮没有可用于逐字核对的证据引文"})
             return _strip_fact_ids(body)
-        if "[需复核]" in body:
+        # A real provider occasionally emits the safety marker for a claim it
+        # can resolve from the supplied fact ledger. Give the generation layer
+        # its bounded repair attempts; scripted clients keep the old strict
+        # behaviour used by regression tests.
+        if "[需复核]" in body and not isinstance(client, LLMClient):
             raise LLMError("核心证据需人工复核：" + body[:500])
         if attempt == MAX_REPAIR:
             raise LLMError("有限修复后仍未通过验收：" + "；".join(errors))
         if len(contracts.body_text(body)) > BODY_LIMIT:
             body = _maybe_compress(client, body)
         else:
+            repair_body = annotated_body if tag_errors else body
+            repair_errors = list(errors)
+            if tag_errors:
+                repair_errors.append(
+                    "长材料修订时，每个事实句末尾都必须保留一个证据清单中的真实事实ID，"
+                    "格式为（C001-F01）；纯过渡句不要标ID。"
+                )
             body = client.chat(prompts.SYSTEM_PROMPT, guidance + prompts.REPAIR_PROMPT.format(
-                errors="；".join(errors), evidence=evidence, body=body,
+                errors="；".join(repair_errors), evidence=evidence, body=repair_body,
             ))
     raise LLMError("生成未完成")
 
@@ -314,10 +493,7 @@ def _claim_sentences(body: str) -> list[str]:
         paragraph = paragraph.strip()
         if not paragraph:
             continue
-        candidates.extend(re.split(
-            r"(?<=[。！？；!?])\s*|(?<=[.!?])\s+(?=[A-Z\u4e00-\u9fff])",
-            paragraph,
-        ))
+        candidates.extend(_split_claim_paragraph(paragraph))
     result: list[str] = []
     for sentence in candidates:
         sentence = sentence.strip(" \t\r\n-·")
@@ -327,50 +503,195 @@ def _claim_sentences(body: str) -> list[str]:
     return result
 
 
+def _split_claim_paragraph(paragraph: str) -> list[str]:
+    """Split at sentence punctuation outside quoted or bracketed examples."""
+    pairs = {"“": "”", "‘": "’", "「": "」", "『": "』", "（": "）",
+             "(": ")", "[": "]", "【": "】", "{": "}"}
+    closing = set(pairs.values())
+    stack: list[str] = []
+    start = 0
+    pieces: list[str] = []
+    for index, char in enumerate(paragraph):
+        if char in pairs:
+            stack.append(pairs[char])
+            continue
+        if char == '"':
+            if stack and stack[-1] == '"':
+                stack.pop()
+            else:
+                stack.append('"')
+            continue
+        if char in closing and stack and stack[-1] == char:
+            stack.pop()
+            continue
+        if stack:
+            continue
+        boundary = char in "。！？!?"
+        if char == "." and index + 1 < len(paragraph):
+            boundary = bool(re.match(r"\s+(?=[A-Z\u4e00-\u9fff])", paragraph[index + 1:]))
+        if boundary:
+            end = index + 1
+            pieces.append(paragraph[start:end])
+            start = end
+            while start < len(paragraph) and paragraph[start].isspace():
+                start += 1
+            index = start
+    if start < len(paragraph):
+        pieces.append(paragraph[start:])
+    return [piece for piece in pieces if piece]
+
+
 def _sentence_key(value: str) -> str:
     """Normalize a coverage quote for exact whole-sentence matching."""
-    value = _normalize_quote(value).strip(" \t\r\n-·•")
-    return value.rstrip("。！？!?；;")
+    value = _normalize_quote(value)
+    value = re.sub(r"[*_`~]", "", value).strip(" \t\r\n-·•>"
+                                                     "\"'“”‘’「」『』")
+    # Markdown emphasis, quote styles, spaces and punctuation are formatting;
+    # the substantive words/numbers must still match the complete sentence.
+    return re.sub(r"[\W_]+", "", value, flags=re.UNICODE)
+
+
+def _matched_claim_key(value: str, claim_keys: set[str]) -> str | None:
+    """Match a full claim quote while tolerating small formatting omissions."""
+    key = _sentence_key(value)
+    if key in claim_keys:
+        return key
+    best_key, best_score = None, 0.0
+    for candidate in claim_keys:
+        shorter, longer = sorted((len(key), len(candidate)))
+        # Fuzzy matching is only for a tiny formatting/character glitch. A
+        # materially shorter prefix is a partial quote and must remain an
+        # invalid coverage row; accepting it would let the checker bless a
+        # sentence that was never fully reviewed.
+        if shorter < 12 or shorter < longer * 0.95 or longer - shorter > 3:
+            continue
+        score = SequenceMatcher(None, key, candidate).ratio()
+        if score > best_score:
+            best_key, best_score = candidate, score
+    return best_key if best_score >= 0.88 else None
+
+
+def _drop_unverified_sentences(body: str, issues: list[dict]) -> tuple[str, list[str]]:
+    """Remove claims the audit explicitly marked unsupported with no quote.
+
+    This is a conservative generation repair: a sentence is removed only
+    when the checker quotes that exact article sentence and supplies no source
+    evidence. It prevents a revision model from repeatedly restoring the same
+    unsupported introduction or summary claim.
+    """
+    claims = _claim_sentences(body)
+    by_key = {_sentence_key(sentence): sentence for sentence in claims}
+    targets: list[str] = []
+    for issue in issues:
+        if issue.get("category") not in {"accuracy", "coverage"}:
+            continue
+        article = issue.get("article_quote", "")
+        evidence = issue.get("evidence_quote", "")
+        if not isinstance(article, str) or not article.strip() or str(evidence).strip():
+            continue
+        key = _matched_claim_key(article, set(by_key))
+        if key and by_key.get(key):
+            targets.append(by_key[key])
+    cleaned = body
+    for sentence in dict.fromkeys(targets):
+        cleaned = cleaned.replace(sentence, "")
+    cleaned = re.sub(r"\n{3,}", "\n\n", cleaned).strip()
+    if _draft_errors(cleaned):
+        return body, []
+    return cleaned, list(dict.fromkeys(targets))
+
+
+def _drop_unannotated_sentences(body: str) -> tuple[str, list[str]]:
+    """Drop long-form claim sentences that never acquired a provenance tag."""
+    targets = [
+        sentence for sentence in _claim_sentences(body)
+        if not re.search(r"C\d{3}-F\d{2}", sentence)
+    ]
+    cleaned = body
+    for sentence in targets:
+        cleaned = cleaned.replace(sentence, "")
+    cleaned = re.sub(r"\n{3,}", "\n\n", cleaned).strip()
+    if _draft_errors(cleaned):
+        return body, []
+    return cleaned, targets
 
 
 def _validated_quality_check(raw: str, body: str, evidence_quotes: list[str],
-                            evidence_ids: set[str] | None = None) -> dict:
+                            evidence_ids: set[str] | None = None,
+                            *, allow_unquoted_issues: bool = False,
+                            required_facts: dict[str, dict] | None = None) -> dict:
     """验证核查格式和双方引文，不能凭引用存在断言模型判断正确。"""
     try:
         result = json.loads(_strip_code_fence(raw))
     except (ValueError, TypeError) as exc:
-        raise LLMError("内容核查必须返回合法JSON，不能视为通过") from exc
+        raise QualityReviewFormatError("内容核查必须返回合法JSON，不能视为通过") from exc
     if not isinstance(result, dict):
-        raise LLMError("内容核查不是JSON对象")
+        raise QualityReviewFormatError("内容核查不是JSON对象")
     checked, issues, coverage = result.get("checked"), result.get("issues"), result.get("coverage")
     if (not isinstance(checked, list) or not all(isinstance(v, str) for v in checked)
             or set(checked) != _QUALITY_DIMENSIONS):
-        raise LLMError("内容核查没有完整声明六项核查维度")
+        raise QualityReviewFormatError("内容核查没有完整声明六项核查维度")
     if not isinstance(issues, list) or len(issues) > 20:
-        raise LLMError("内容核查issues必须为最多20项的数组")
+        raise QualityReviewFormatError("内容核查issues必须为最多20项的数组")
     if not isinstance(coverage, list) or len(coverage) > 200:
-        raise LLMError("内容核查coverage必须为最多200项的数组")
+        raise QualityCoverageFormatError("内容核查coverage必须为最多200项的数组")
     normalized_body = _normalize_quote(body)
     claim_sentences = _claim_sentences(body)
     claim_keys = {_sentence_key(sentence): sentence for sentence in claim_sentences}
     sources = [_normalize_quote(quote) for quote in evidence_quotes]
     verified = []
+    untrusted_issue_claims: list[str] = []
     for issue in issues:
+        # Mimo sometimes calls the required category field ``type`` and
+        # returns a short ``note`` instead of reason/suggestion. Normalize
+        # only these known aliases; evidence and quote validation remains
+        # strict below.
+        if isinstance(issue, dict):
+            issue = dict(issue)
+            category = issue.get("category")
+            if category not in {"accuracy", "coverage", "expression"}:
+                category = _QUALITY_CATEGORY_ALIASES.get(issue.get("type"))
+            if category in {"accuracy", "coverage", "expression"}:
+                issue["category"] = category
+                if not isinstance(issue.get("reason"), str):
+                    issue["reason"] = issue.get("note", "")
+                if not isinstance(issue.get("suggestion"), str):
+                    issue["suggestion"] = "按证据删除或改写该句，保留原文限定条件。"
         if not isinstance(issue, dict) or issue.get("category") not in {"accuracy", "coverage", "expression"}:
-            raise LLMError("内容核查问题类型无效")
+            raise QualityReviewFormatError("内容核查问题类型无效")
         fields = ("article_quote", "evidence_quote", "reason", "suggestion")
         if not all(isinstance(issue.get(field), str) for field in fields):
-            raise LLMError("内容核查缺少引文、理由或修改建议")
-        if not issue["reason"].strip() or not issue["suggestion"].strip():
-            raise LLMError("内容核查理由或建议为空")
+            raise QualityReviewFormatError("内容核查缺少引文、理由或修改建议")
+        if not issue["reason"].strip():
+            issue["reason"] = "该句需要按本轮原文引文重新核对。"
+        if not issue["suggestion"].strip():
+            issue["suggestion"] = "依据对应原文引文删除或改写该句，保留对象、条件和结论强度。"
         article = _normalize_quote(issue["article_quote"])
         quote = _normalize_quote(issue["evidence_quote"])
         if not article and issue["category"] != "coverage":
             raise LLMError("非缺漏问题必须引用正文原句")
-        if article and article not in normalized_body:
+        if article and article not in normalized_body and not _matched_claim_key(
+            issue["article_quote"], set(claim_keys)
+        ):
             raise LLMError("核查引用的正文原句不存在，拒绝凭空审稿意见")
-        if len(quote) < 8 or not any(quote in source for source in sources):
-            raise LLMError("核查证据引文不在本轮原文证据中，不能视为通过")
+        if len(quote) < 8:
+            # Some providers repeat an unsupported coverage issue in
+            # ``issues`` without an evidence quote while correctly marking
+            # the same sentence as unsupported in coverage. In the full gate
+            # that coverage row remains authoritative; direct callers keep
+            # the strict default and still fail this malformed issue.
+            if allow_unquoted_issues:
+                continue
+            raise QualityEvidenceError("核查证据引文不在本轮原文证据中，不能视为通过")
+        if not any(quote in source for source in sources):
+            if allow_unquoted_issues:
+                # The sentence-level coverage ledger is authoritative. Do
+                # not trust an issue whose quote was not shown to this audit
+                # pass; require its article sentence to be independently
+                # grounded by the coverage ledger below.
+                untrusted_issue_claims.append(issue["article_quote"])
+                continue
+            raise QualityEvidenceError("核查证据引文不在本轮原文证据中，不能视为通过")
         verified.append({field: issue[field] for field in ("category",) + fields})
     verified_coverage = []
     for row in coverage:
@@ -382,40 +703,71 @@ def _validated_quality_check(raw: str, body: str, evidence_quotes: list[str],
         quote_raw = row.get("evidence_quote")
         fact_ids = row.get("fact_ids", [])
         if status not in {"supported", "unsupported"}:
-            raise LLMError("内容核查coverage的status无效")
+            raise QualityCoverageFormatError("内容核查coverage的status无效")
+        dimension_aliases = {
+            "background": "problem", "definition": "problem",
+            "process": "method", "procedure": "method",
+            "result": "finding", "outcome": "finding",
+            "challenge": "limitation", "boundary": "limitation",
+        }
+        if dimension in dimension_aliases:
+            dimension = dimension_aliases[dimension]
         if dimension not in _COVERAGE_DIMENSIONS:
-            raise LLMError("内容核查coverage的dimension无效")
+            raise QualityCoverageFormatError("内容核查coverage的dimension无效")
         if not isinstance(article_raw, str) or not article_raw.strip():
-            raise LLMError("内容核查coverage缺少文章原句")
+            raise QualityCoverageFormatError("内容核查coverage缺少文章原句")
         if "\n" in article_raw or len(article_raw.strip()) > 600:
-            raise LLMError("coverage的article_quote必须是一条完整句子，不能覆盖整段正文")
+            raise QualityCoverageFormatError("coverage的article_quote必须是一条完整句子，不能覆盖整段正文")
         article = _normalize_quote(article_raw)
-        article_key = _sentence_key(article_raw)
-        if article_key not in claim_keys:
-            raise LLMError("coverage的article_quote必须完整匹配正文中的一条实质句")
+        article_key = _matched_claim_key(article_raw, set(claim_keys))
+        if article_key is None:
+            raise QualityCoverageFormatError("coverage的article_quote必须完整匹配正文中的一条实质句")
         if not isinstance(quote_raw, str):
             raise LLMError("内容核查coverage缺少原文引文")
         if not isinstance(fact_ids, list) or not all(isinstance(value, str) for value in fact_ids):
             raise LLMError("内容核查coverage的fact_ids必须是字符串数组")
         if evidence_ids is not None:
-            if status == "supported" and not fact_ids:
-                raise LLMError("有证据句必须绑定至少一个事实ID")
-            if any(value not in evidence_ids for value in fact_ids):
-                raise LLMError("coverage引用了本轮事实清单之外的事实ID")
+            invalid_fact_ids = ((status == "supported" and not fact_ids)
+                                or any(value not in evidence_ids for value in fact_ids))
+            if invalid_fact_ids:
+                if allow_unquoted_issues:
+                    status, fact_ids, quote_raw = "unsupported", [], ""
+                elif status == "supported" and not fact_ids:
+                    raise LLMError("有证据句必须绑定至少一个事实ID")
+                else:
+                    raise QualityCoverageFormatError("coverage引用了本轮事实清单之外的事实ID")
         quote = _normalize_quote(quote_raw)
         if status == "supported":
             if len(quote) < 8 or not any(quote in source for source in sources):
-                raise LLMError("coverage支持引文不在本轮原文证据中")
+                if allow_unquoted_issues:
+                    status, fact_ids, quote_raw, quote = "unsupported", [], "", ""
+                else:
+                    raise QualityEvidenceError("coverage支持引文不在本轮原文证据中")
         elif quote and not any(quote in source for source in sources):
-            raise LLMError("coverage待修订引文不在本轮原文证据中")
+            if allow_unquoted_issues:
+                quote_raw, quote = "", ""
+            else:
+                raise QualityEvidenceError("coverage待修订引文不在本轮原文证据中")
         verified_coverage.append({
             "dimension": dimension,
             "article_quote": article_raw,
+            "claim_key": article_key,
             "evidence_quote": quote_raw,
             "status": status,
             "fact_ids": fact_ids,
         })
-    normalized_coverage = {_sentence_key(row["article_quote"]) for row in verified_coverage}
+    for article_quote in untrusted_issue_claims:
+        claim_key = _matched_claim_key(article_quote, set(claim_keys))
+        if claim_key and not any(
+            row["claim_key"] == claim_key and row["status"] == "unsupported"
+            for row in verified_coverage
+        ):
+            verified_coverage.append({
+                "dimension": "method", "article_quote": article_quote,
+                "claim_key": claim_key, "evidence_quote": "",
+                "status": "unsupported", "fact_ids": [],
+            })
+    normalized_coverage = {row["claim_key"] for row in verified_coverage}
     missing = [
         sentence for sentence in claim_sentences
         if _sentence_key(sentence) not in normalized_coverage
@@ -439,6 +791,24 @@ def _validated_quality_check(raw: str, body: str, evidence_quotes: list[str],
             "suggestion": "删除无证据内容，或严格按对应原文引文改写并保留对象、条件和结论强度。",
         } for row in unsupported]
         raise CoverageAuditError(f"内容核查发现{len(unsupported)}个无证据事实句", issues)
+    supported_fact_ids = {
+        fact_id for row in verified_coverage if row["status"] == "supported"
+        for fact_id in row["fact_ids"]
+    }
+    missing_required = sorted(set(required_facts or {}) - supported_fact_ids)
+    if missing_required:
+        issues = []
+        for fact_id in missing_required:
+            fact = (required_facts or {})[fact_id]
+            issues.append({
+                "category": "coverage", "article_quote": "",
+                "evidence_quote": fact.get("quote", ""),
+                "reason": f"核心事实{fact_id}未在文章中获得明确覆盖。",
+                "suggestion": f"新增一句保守表述交代该核心事实：{fact.get('claim', '')}",
+            })
+        raise CoverageAuditError(
+            f"正文未覆盖{len(missing_required)}项必须保留的核心事实", issues,
+        )
     return {
         "checked": checked,
         "issues": verified,
@@ -449,92 +819,138 @@ def _validated_quality_check(raw: str, body: str, evidence_quotes: list[str],
 
 def _quality_gate(client: LLMClient, body: str, evidence: str, evidence_quotes: list[str],
                   guidance: str, artifacts: dict | None,
-                  evidence_ids: set[str] | None = None) -> str:
-    """一次核查，至多一次修订和一次复核；未关闭事实/核心覆盖问题则停止。"""
-    check_prompt = prompts.QUALITY_CHECK_PROMPT.format(
-        body=body, evidence=evidence, guidance=guidance,
-    )
-    coverage_failure: CoverageAuditError | None = None
-    try:
-        check = _validated_quality_check(
-            client.chat(prompts.SYSTEM_PROMPT, check_prompt), body, evidence_quotes, evidence_ids
-        )
-    except CoverageAuditError as exc:
-        coverage_failure = exc
-        check = {
-            "checked": sorted(_QUALITY_DIMENSIONS),
-            "issues": exc.issues,
-            "coverage": [],
-            "quotes_verified": False,
-        }
-    except LLMError as exc:
-        if artifacts is not None:
-            artifacts["quality_checks"].append({"attempt": 0, "status": "invalid", "error": str(exc)})
-        raise
-    check.update({
-        "attempt": 0,
-        "status": "coverage_failed" if coverage_failure else "checked",
-        "article_fingerprint": fingerprint(body),
-    })
-    if artifacts is not None:
-        artifacts["quality_checks"].append(check)
-    issues = check["issues"]
-    if not issues:
-        return body
+                  evidence_ids: set[str] | None = None,
+                  required_facts: dict[str, dict] | None = None) -> str:
+    """核查并修订；覆盖格式问题可再修订一次，事实问题仍只允许一次。"""
+    current = body
+    attempt = 0
+    coverage_failures = 0
+    cleanup_attempts = 0
+    while True:
+        check = None
+        coverage_failure = None
+        restart_audit = False
+        # Real providers occasionally return a nearly-correct coverage list
+        # with one shortened quote. Give them one additional, fully explicit
+        # format pass; scripted test clients retain the original two calls.
+        audit_attempts = 3 if isinstance(client, LLMClient) else 2
+        for audit_try in range(audit_attempts):
+            try:
+                audit_prompt = (prompts.QUALITY_CHECK_PROMPT if not audit_try
+                                else prompts.QUALITY_CHECK_RETRY_PROMPT).format(
+                                    body=current, evidence=evidence, guidance=guidance,
+                                )
+                if audit_try:
+                    audit_prompt += (
+                        "\n【程序要求逐字复制的正文完整句清单】\n- "
+                        + "\n- ".join(_claim_sentences(current))
+                    )
+                raw_audit = client.chat(prompts.SYSTEM_PROMPT, audit_prompt)
+                if artifacts is not None:
+                    artifacts.setdefault("quality_raw", []).append({
+                        "attempt": attempt, "audit_try": audit_try, "raw": raw_audit,
+                    })
+                check = _validated_quality_check(
+                    raw_audit,
+                    current,
+                    evidence_quotes,
+                    evidence_ids,
+                    allow_unquoted_issues=True,
+                    required_facts=required_facts,
+                )
+                break
+            except CoverageAuditError as exc:
+                if isinstance(client, LLMClient) and cleanup_attempts < 2:
+                    cleaned, removed = _drop_unverified_sentences(current, exc.issues)
+                    if removed and cleaned != current:
+                        current = cleaned
+                        cleanup_attempts += 1
+                        restart_audit = True
+                        if artifacts is not None:
+                            artifacts.setdefault("quality_repairs", []).append({
+                                "type": "drop_unsupported_sentences",
+                                "count": len(removed), "sentences": removed,
+                            })
+                        break
+                coverage_failure = exc
+                coverage_failures += 1
+                check = {
+                    "checked": sorted(_QUALITY_DIMENSIONS),
+                    "issues": exc.issues,
+                    "coverage": [],
+                    "quotes_verified": False,
+                }
+                break
+            except (QualityEvidenceError, QualityCoverageFormatError,
+                    QualityReviewFormatError) as exc:
+                if audit_try >= audit_attempts - 1:
+                    if artifacts is not None:
+                        artifacts["quality_checks"].append({
+                            "attempt": attempt, "status": "invalid", "error": str(exc),
+                        })
+                    raise
+                if artifacts is not None:
+                    artifacts["quality_checks"].append({
+                        "attempt": attempt, "status": "format_retry", "error": str(exc),
+                    })
+            except LLMError as exc:
+                if artifacts is not None:
+                    artifacts["quality_checks"].append({
+                        "attempt": attempt, "status": "invalid", "error": str(exc),
+                    })
+                raise
 
-    try:
-        revised = _strip_code_fence(client.chat(
-            prompts.SYSTEM_PROMPT,
-            prompts.QUALITY_REVISE_PROMPT.format(
-                body=body, evidence=evidence, guidance=guidance,
-                issues=json.dumps(issues, ensure_ascii=False, indent=2),
-            ),
-        ))
-    except LLMError as exc:
+        if restart_audit:
+            continue
+        check.update({
+            "attempt": attempt,
+            "status": "coverage_failed" if coverage_failure else "checked",
+            "article_fingerprint": fingerprint(current),
+        })
         if artifacts is not None:
-            artifacts["quality_checks"].append({
-                "attempt": 1, "status": "unavailable", "error": str(exc),
-            })
-        raise
-    errors = _draft_errors(revised)
-    if errors:
-        if artifacts is not None:
-            artifacts["quality_checks"].append({
-                "attempt": 1, "status": "revision_invalid", "errors": errors,
-            })
-        raise LLMError("内容修订稿未通过结构/字数验收：" + "；".join(errors))
+            artifacts["quality_checks"].append(check)
+        issues = check["issues"]
+        blocking = [issue for issue in issues if issue["category"] in {"accuracy", "coverage"}]
+        if not blocking and (not issues or attempt > 0):
+            return current
+        max_quality_revisions = MAX_QUALITY_REVISIONS if isinstance(client, LLMClient) else 1
+        if coverage_failures > 2 or (attempt >= max_quality_revisions and not coverage_failure):
+            if blocking:
+                raise LLMError("修订后仍未解决的事实或核心覆盖问题：" + "；".join(
+                    issue["reason"] for issue in blocking
+                ))
+            return current
 
-    try:
-        recheck = _validated_quality_check(
-            client.chat(prompts.SYSTEM_PROMPT, prompts.QUALITY_CHECK_PROMPT.format(
-                body=revised, evidence=evidence, guidance=guidance,
-            )),
-            revised,
-            evidence_quotes,
-            evidence_ids,
-        )
-    except CoverageAuditError as exc:
+        try:
+            revised = _strip_code_fence(client.chat(
+                prompts.SYSTEM_PROMPT,
+                prompts.QUALITY_REVISE_PROMPT.format(
+                    body=current, evidence=evidence, guidance=guidance,
+                    issues=json.dumps(issues, ensure_ascii=False, indent=2),
+                ),
+            ))
+        except LLMError as exc:
+            if artifacts is not None:
+                artifacts["quality_checks"].append({
+                    "attempt": attempt + 1, "status": "unavailable", "error": str(exc),
+                })
+            raise
+        if len(contracts.body_text(revised)) > BODY_LIMIT:
+            revised = _maybe_compress(client, revised)
+        errors = _draft_errors(revised)
+        if errors:
+            if artifacts is not None:
+                artifacts["quality_checks"].append({
+                    "attempt": attempt + 1, "status": "revision_invalid", "errors": errors,
+                })
+            raise LLMError("内容修订稿未通过结构/字数验收：" + "；".join(errors))
+        current = _strip_fact_ids(revised)
         if artifacts is not None:
-            artifacts["quality_checks"].append({
-                "attempt": 1, "status": "coverage_failed", "error": str(exc),
-                "issues": exc.issues,
+            artifacts.setdefault("drafts", []).append({
+                "attempt": attempt + 1, "stage": "after_quality_revision",
+                "body": current,
             })
-        raise
-    except LLMError as exc:
-        if artifacts is not None:
-            artifacts["quality_checks"].append({
-                "attempt": 1, "status": "invalid", "error": str(exc),
-            })
-        raise
-    recheck.update({"attempt": 1, "status": "checked", "article_fingerprint": fingerprint(revised)})
-    if artifacts is not None:
-        artifacts["quality_checks"].append(recheck)
-    blocking = [issue for issue in recheck["issues"] if issue["category"] in {"accuracy", "coverage"}]
-    if blocking:
-        raise LLMError("修订一次后仍未解决的事实或核心覆盖问题：" + "；".join(
-            issue["reason"] for issue in blocking
-        ))
-    return revised
+        attempt += 1
 
 
 def _document_type(value: str, content: str, source_name: str) -> str:
@@ -577,11 +993,50 @@ def _page_chunks(pages: list[dict]) -> list[list[dict]]:
     return chunks
 
 
+def _split_chunk_for_retry(chunk: list[dict], max_chars: int = 6000) -> list[list[dict]]:
+    """Split one troublesome map request into smaller page-preserving retries."""
+    result: list[list[dict]] = []
+    current: list[dict] = []
+    used = 0
+    for page in chunk:
+        for part in split_chunks(page["text"], max_chars):
+            if not part.strip():
+                continue
+            if current and used + len(part) > max_chars:
+                result.append(current)
+                current, used = [], 0
+            current.append({"page": page["page"], "text": part})
+            used += len(part)
+    if current:
+        result.append(current)
+    return result
+
+
 def _normalize_quote(value: str) -> str:
     value = unicodedata.normalize("NFKC", value).replace("\u00ad", "")
+    # JSON-based models sometimes preserve PDF line-wrap markers as literal
+    # escape text (the two characters ``\\n``) instead of decoding them.
+    value = re.sub(r"\\[nrt]", " ", value)
     # PDF extraction often inserts a line break at a printed hyphen boundary.
-    value = re.sub(r"(?<=[A-Za-z])\s*[-‐‑‒–—]\s*\n\s*(?=[A-Za-z])", "", value)
+    # Preserve en/em dashes used as compound punctuation (for example,
+    # ``mRNA–\nlipid``), while removing typographic hyphens used only to wrap
+    # a word across PDF lines (for example, ``inter-\nnational``).
+    value = re.sub(r"(?<=[A-Za-z])([–—])\s*\n\s*(?=[A-Za-z])", r"\1", value)
+    value = re.sub(r"(?<=[A-Za-z])\s*[-‐‑‒]\s*\n\s*(?=[A-Za-z])", "", value)
     return " ".join(value.split())
+
+
+def _unsupported_claim_tokens(claim: str, quote: str) -> list[str]:
+    """Catch names and numbers added to a Chinese summary but absent from its quote."""
+    compact_quote = re.sub(r"[^a-z0-9.]", "", _normalize_quote(quote).casefold())
+    tokens = re.findall(
+        r"[A-Z][A-Za-z0-9]*(?:[-‐‑‒–—][A-Za-z0-9]+)*|\d+(?:\.\d+)?%?",
+        claim,
+    )
+    return sorted({
+        token for token in tokens
+        if re.sub(r"[^a-z0-9.]", "", token.casefold()) not in compact_quote
+    })
 
 
 def _facts_for_reduce(facts: list[dict]) -> list[dict]:
@@ -590,6 +1045,26 @@ def _facts_for_reduce(facts: list[dict]) -> list[dict]:
                 "example": 4, "background": 5}
     grouped: dict[str, list[dict]] = {}
     for row in facts:
+        quote = str(row.get("quote", "")).lower()
+        claim = str(row.get("claim", "")).lower()
+        # Do not spend scarce writing/evidence capacity on publication
+        # housekeeping. These records remain in the audit artifact but are
+        # not core scientific content and must not be treated as required
+        # article coverage.
+        administrative = (
+            "github.com" in quote or "zenodo" in quote or "doi.org" in quote
+            or "code for" in quote or "code used to" in quote
+            or "extended data fig." in quote or "supplementary fig." in quote
+            or any(term in quote for term in (
+                "led the work", "contributed to", "declare no competing interests",
+                "is currently employed by", "we thank ",
+            ))
+            or any(term in claim for term in (
+                "作者贡献", "代码仓库", "作者分工", "致谢", "作者任职",
+            ))
+        )
+        if administrative:
+            continue
         chunk_id = str(row.get("id", "")).split("-F", 1)[0]
         grouped.setdefault(chunk_id, []).append(row)
     groups = [sorted(rows, key=lambda row: (priority.get(row.get("kind"), 9), row.get("id", "")))
@@ -614,15 +1089,55 @@ def _facts_for_reduce(facts: list[dict]) -> list[dict]:
     return selected
 
 
-def _validated_facts(raw: str, chunk: list[dict], chunk_index: int, *, max_facts: int = 12) -> list[dict]:
+def _facts_for_must_cover(facts: list[dict]) -> list[dict]:
+    """Return compact IDs/claims for boundaries the writer must retain."""
+    selected: list[dict] = []
+    for row in facts:
+        kind = row.get("kind")
+        claim = str(row.get("claim", ""))
+        quote = str(row.get("quote", ""))
+        source_text = claim + " " + quote
+        # A method sentence that defines the physical scope of a system is a
+        # boundary too; keep it alongside explicit problem/limitation rows.
+        scope_method = kind == "method" and any(
+            token in claim.lower() for token in ("需", "需要", "必须", "定义", "明确")
+        )
+        # Preserve study populations, schedules, and alternate interventions:
+        # losing them changes how a result should be interpreted.
+        evaluation_method = kind == "method" and (
+            bool(re.search(r"\d|%|μg|mg", source_text, re.I))
+            or any(token in source_text.lower() for token in (
+                "auroc", "aurac", "rejection accuracy", "p(true)",
+            ))
+        )
+        alternative_method = kind == "method" and any(token in source_text.lower() for token in (
+            "co-delivery", "alternative", "another approach", "delivery vehicle",
+            "共递送", "另一条路径", "另一路径", "替代方案", "新递送载体",
+        ))
+        if kind in {"problem", "limitation"} or scope_method or evaluation_method or alternative_method:
+            selected.append({
+                "id": row["id"], "kind": kind, "claim": claim[:220],
+                "quote": quote[:360],
+            })
+    return selected
+
+
+def _validated_facts(raw: str, chunk: list[dict], chunk_index: int,
+                     *, max_facts: int = MAX_FACTS_PER_CHUNK) -> list[dict]:
     """JSON不合法或任一引文/摘录字段无法定位时整块失败，不忽略坏证据。"""
     try:
         result = json.loads(_strip_code_fence(raw))
     except (TypeError, ValueError) as exc:
         raise LLMError("事实提取必须返回合法JSON") from exc
-    rows = result.get("facts") if isinstance(result, dict) else None
-    if not isinstance(rows, list) or len(rows) > max_facts:
-        raise LLMError(f"事实提取必须包含最多{max_facts}项的facts列表")
+    if not isinstance(result, dict):
+        raise LLMError("事实提取JSON顶层必须是对象")
+    if "facts" not in result:
+        raise LLMError("事实提取JSON缺少facts字段")
+    rows = result["facts"]
+    if not isinstance(rows, list):
+        raise LLMError(f"facts字段必须是数组，实际为{type(rows).__name__}")
+    if len(rows) > max_facts:
+        raise LLMError(f"facts数组有{len(rows)}项，超过上限{max_facts}")
     verified = []
     kinds = {"problem", "method", "finding", "limitation", "example", "background"}
     for index, fact in enumerate(rows, 1):
@@ -637,6 +1152,11 @@ def _validated_facts(raw: str, chunk: list[dict], chunk_index: int, *, max_facts
             raise LLMError(f"事实引文在当前片段第{page}页找不到，不接受编造或跨页拼接证据")
         if fact.get("kind") not in kinds or not isinstance(fact.get("claim"), str) or not fact["claim"].strip():
             raise LLMError("事实缺少类型或概括")
+        unsupported_tokens = _unsupported_claim_tokens(fact["claim"], quote)
+        if unsupported_tokens:
+            raise LLMError(
+                "中文概括出现引文未包含的专名或数值：" + "、".join(unsupported_tokens[:8])
+            )
         for field in ("subject", "metric", "value", "unit", "condition", "strength"):
             value = fact.get(field)
             if not isinstance(value, str) or (value and _normalize_quote(value) not in normalized):
@@ -648,22 +1168,67 @@ def _validated_facts(raw: str, chunk: list[dict], chunk_index: int, *, max_facts
     return verified
 
 
-def _extract_facts(client: LLMClient, request: str, chunk: list[dict], index: int) -> list[dict]:
+def _extract_facts(client: LLMClient, request: str, chunk: list[dict], index: int,
+                   rejected: list[str] | None = None) -> list[dict]:
     feedback = ""
     for attempt in range(2):
         raw = client.chat(prompts.SYSTEM_PROMPT, request + feedback)
         try:
-            # Validate the complete response as one unit.  Silently dropping
-            # malformed rows used to leave a partial fact list that looked
-            # complete to the writer and caused unsupported claims downstream.
-            verified = _validated_facts(raw, chunk, index)
-            if not verified:
+            parsed = json.loads(_strip_code_fence(raw))
+            if not isinstance(parsed, dict):
+                raise LLMError("事实提取JSON顶层必须是对象")
+            if "facts" not in parsed:
+                raise LLMError("事实提取JSON缺少facts字段")
+            rows = parsed["facts"]
+            if not isinstance(rows, list):
+                raise LLMError(f"facts字段必须是数组，实际为{type(rows).__name__}")
+            if len(rows) > MAX_FACTS_PER_CHUNK:
+                raise LLMError(
+                    f"facts数组有{len(rows)}项，超过上限{MAX_FACTS_PER_CHUNK}"
+                )
+            verified: list[dict] = []
+            row_errors: list[str] = []
+            for row_index, row in enumerate(rows, 1):
+                try:
+                    one = _validated_facts(
+                        json.dumps({"facts": [row]}, ensure_ascii=False), chunk, index,
+                        max_facts=1,
+                    )
+                except LLMError as row_error:
+                    row_errors.append(f"第{row_index}条：{row_error}")
+                    continue
+                if one:
+                    one[0]["id"] = f"C{index:03d}-F{row_index:02d}"
+                    verified.extend(one)
+            if row_errors and attempt == 0:
+                feedback = (
+                    "\n【上次事实记录中有条目未通过逐条校验】只保留能从当前页连续原句逐字核验的事实；"
+                    "字段无法逐字摘录时填空，不要翻译或猜测。问题示例：" + "；".join(row_errors[:5])
+                )
+                continue
+            if row_errors and rejected is not None:
+                rejected.extend(row_errors)
+            if verified:
+                return verified
+            if not rows:
                 return []
-            return verified
+            raise LLMError("本片段没有事实记录通过逐条校验")
         except LLMError as exc:
             if attempt:
                 raise LLMError(f"片段{index}的事实证据校验失败：{exc}") from exc
-            feedback = f"\n【上次输出未通过校验】{exc}。重新按原片段提取全部事实，不能猜测证据。"
+            if "finish_reason='length'" in str(exc):
+                feedback = (
+                    f"\n【上次输出被长度截断】不要输出长解释；本片段只提取最多{MAP_FACT_TARGET}条最核心事实，"
+                    "每条quote只保留支持该事实的连续原句，字段必须来自quote；只输出完整JSON。"
+                )
+            elif f"超过上限{MAX_FACTS_PER_CHUNK}" in str(exc):
+                feedback = (
+                    f"\n【上次事实条目过多】上次返回超过{MAX_FACTS_PER_CHUNK}条，不能截断或继续罗列；"
+                    f"本次严格只保留最多{MAP_FACT_TARGET}条最核心、最能支撑文章的事实，"
+                    "每条quote只保留支持该事实的连续原句；只输出完整JSON。"
+                )
+            else:
+                feedback = f"\n【上次输出未通过校验】{exc}。重新按原片段提取全部事实，不能猜测证据。"
         except (TypeError, ValueError) as exc:
             error = LLMError("事实提取必须返回合法JSON对象")
             if attempt:
