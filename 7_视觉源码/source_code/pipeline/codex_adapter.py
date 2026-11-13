@@ -36,6 +36,22 @@ PROVIDER_ID = "llm"
 SECRET_ENV = "LLM_API_KEY"
 
 
+def _active_secret(settings: Settings) -> str:
+    """The key value handed to the app-server child process, never to a log.
+
+    ``env_key`` in the provider config only names the variable; the value must
+    exist in the environment of the spawned app-server. ``CodexConfig.env`` is
+    passed to ``subprocess.Popen``, so the secret never touches ``os.environ``
+    and is never written to disk.
+    """
+
+    try:
+        value = settings.vision.api_key.get_secret_value()
+    except AttributeError:
+        return ""
+    return value or ""
+
+
 def _jsonable(value: Any) -> Any:
     if value is None or isinstance(value, (str, int, float, bool)):
         return value
@@ -76,6 +92,7 @@ class CodexAdapter:
         self._run_dir = Path(run_dir) if run_dir is not None else self._settings.paths.result_dir
         self._timeout_s = float(options.get("timeout_s", self._settings.vision.timeout_s))
         self._max_retries = int(options.get("max_retries", self._settings.vision.max_retries))
+        self._secret = _active_secret(self._settings)
         self._codex: Any | None = None
         self._closed = False
         self._interrupt_error: str | None = None
@@ -92,7 +109,12 @@ class CodexAdapter:
                 "openai-codex is required: pip install openai-codex",
                 hint="This project uses the Codex SDK, not the openai HTTP SDK.",
             ) from exc
-        self._codex = Codex(config=CodexConfig(config_overrides=self._config_overrides()))
+        self._codex = Codex(
+            config=CodexConfig(
+                config_overrides=self._config_overrides(),
+                env={SECRET_ENV: self._secret} if self._secret else None,
+            )
+        )
         return self._codex
 
     def _config_overrides(self) -> tuple[str, ...]:
@@ -179,7 +201,9 @@ class CodexAdapter:
             "items": [_jsonable(item) for item in (getattr(result, "items", None) or [])],
             "final_response": getattr(result, "final_response", None),
         }
-        text = redact(json.dumps(payload, ensure_ascii=False, indent=2, default=str))
+        text = redact(
+            json.dumps(payload, ensure_ascii=False, indent=2, default=str), (self._secret,)
+        )
         path = self._raw_path(request, attempt)
         try:
             path.parent.mkdir(parents=True, exist_ok=True)
@@ -195,7 +219,7 @@ class CodexAdapter:
         try:
             turn.interrupt()
         except Exception as exc:  # noqa: BLE001 - interrupt is best-effort cleanup
-            self._interrupt_error = redact(f"{type(exc).__name__}: {exc}")[:200]
+            self._interrupt_error = redact(f"{type(exc).__name__}: {exc}", (self._secret,))[:200]
 
     def _run_turn(self, request: ModelRequest, inputs: list[Any], timeout_s: float, attempt: int) -> tuple[Any, dict]:
         from openai_codex import Sandbox
@@ -222,12 +246,19 @@ class CodexAdapter:
         return result, self._write_raw(request, attempt, result)
 
     def _classify(self, exc: BaseException) -> PipelineError:
-        message = redact(f"{type(exc).__name__}: {exc}")[:200]
+        message = redact(f"{type(exc).__name__}: {exc}", (self._secret,))[:200]
         lowered = message.lower()
         if "timeout" in lowered or "timed out" in lowered:
             return ModelTimeout(message)
         # Word boundaries keep "author" or "authors" from being read as auth.
-        if re.search(r"\b(auth|login|unauthorized)\b|401", lowered):
+        # A missing provider secret surfaces as a plain RuntimeError from the
+        # runtime, so the credential wording is matched explicitly: I7 maps
+        # AUTH_MISSING to exit 2, while a generic MODEL_API_ERROR would map to 5.
+        if re.search(
+            r"\b(auth|login|unauthorized)\b|401|missing environment variable|"
+            r"no api key|not logged in|invalid api key",
+            lowered,
+        ):
             return AuthMissing(
                 f"Codex authentication unavailable: {message}",
                 hint="Provide LLM_API_KEY / LLM_BASE_URL, or configure a working Codex provider.",
@@ -252,7 +283,9 @@ class CodexAdapter:
                 result, raw = self._run_turn(request, inputs, timeout_s, attempt)
                 status = _status_name(getattr(result, "status", None))
                 error_obj = getattr(result, "error", None)
-                error_message = redact(str(getattr(error_obj, "message", "") or "")) or None
+                error_message = (
+                    redact(str(getattr(error_obj, "message", "") or ""), (self._secret,)) or None
+                )
 
                 if status == "interrupted":
                     raise TruncatedResponse(
