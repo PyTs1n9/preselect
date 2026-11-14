@@ -15,6 +15,7 @@ from pathlib import Path
 import pytest
 
 import main
+from pipeline import runner
 from pipeline.errors import AuthMissing, Code, exit_code_for
 from pipeline.settings import load_settings
 
@@ -65,7 +66,7 @@ def test_run_creates_i2_layout_and_passes_source_pdf(tmp_path, monkeypatch):
         captured["resume"] = resume
         return []
 
-    monkeypatch.setattr(main, "run_stages", fake_run_stages)
+    monkeypatch.setattr(runner, "run_stages", fake_run_stages)
     monkeypatch.setattr(main, "load_settings", lambda **_: _settings(tmp_path))
     pdf = tmp_path / "paper.pdf"
     pdf.write_bytes(b"%PDF-1.4\n")

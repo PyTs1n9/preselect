@@ -328,7 +328,7 @@ def test_scan_missing_assets_stop_before_provider(ctx, fake, tmp_path, missing):
 
 
 def test_png_count_mismatch_fails_before_model(ctx, fake, monkeypatch):
-    def mismatched_pdf(path, *, run_dir):
+    def mismatched_pdf(path, *, run_dir, dpi, settings):
         assert path == ctx.artifacts["source_pdf"] and run_dir == ctx.run_dir
         image = run_dir / "input" / "page_0001.png"
         image.parent.mkdir(parents=True, exist_ok=True)

@@ -14,7 +14,9 @@
     "max_repair_attempts": 2,
     "keep_intermediate": true,
     "body_min_han": 2500,
-    "body_max_han": 4000
+    "body_max_han": 4000,
+    "max_pdf_mib": 20,
+    "max_pages": 100
   },
   "paths": {
     "result_dir": "result/runs",

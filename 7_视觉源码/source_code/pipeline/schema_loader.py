@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import hashlib
 import json
 import re
 from pathlib import Path
@@ -128,7 +127,3 @@ def validate_instance(name: str, obj: object) -> list[Issue]:
         issues.append(Issue(Code.SCHEMA_INVALID, "validate", path, "error",
                             f"Schema constraint failed: {error.validator}", "Fix the instance to match the schema"))
     return sorted(issues, key=lambda issue: (issue.path, issue.message))
-
-
-def schema_sha256(name: str) -> str:
-    return hashlib.sha256(_read_schema_bytes(name)).hexdigest()

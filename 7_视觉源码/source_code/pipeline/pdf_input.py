@@ -17,13 +17,9 @@ from .errors import (
     PdfRenderFailed,
     PdfTooLarge,
 )
-from .settings import load_settings
+from .settings import Settings, load_settings
 
 
-_MAX_FILE_SIZE = 20 * 1024 * 1024
-# 50 was an early assumption; the real materials reach 50 pages exactly, so the
-# ceiling moved to 100 to leave headroom without permitting unbounded input.
-_MAX_PAGE_COUNT = 100
 _HASH_CHUNK_SIZE = 1024 * 1024
 
 
@@ -60,13 +56,6 @@ def _default_run_dir(pdf_path: Path) -> Path:
     if pdf_path.parent.name == "input":
         return pdf_path.parent.parent
     return pdf_path.parent
-
-
-def _dpi() -> int:
-    try:
-        return load_settings(require_secret=False).vision.dpi
-    except ConfigError:
-        return 200
 
 
 def _text_layer(page: Any) -> bool:
@@ -125,13 +114,26 @@ def _render_pages(pdf_path: Path, page_infos: list[PageInfo], run_dir: Path, dpi
     return rendered
 
 
-def load_pdf(path: Path, run_dir: Path | None = None) -> PdfInfo:
+def load_pdf(
+    path: Path,
+    run_dir: Path | None = None,
+    dpi: int | None = None,
+    *,
+    settings: Settings | None = None,
+) -> PdfInfo:
     """Inspect ``path`` and render every page to PNG.
 
     The Codex SDK cannot ingest PDF bytes, so rendering always happens.
     ``run_dir`` is where ``input/page_%04d.png`` is written; pipeline callers
     must pass ``ctx.run_dir`` so nothing lands next to the source PDF (I2).
+    ``dpi`` must be explicit. Stages pass their resolved ``settings`` so input
+    limits use the same configuration as the rest of the run.
     """
+
+    if dpi is None:
+        raise ConfigError("vision.dpi is required")
+    resolved_settings = settings if settings is not None else load_settings(require_secret=False)
+    limits = resolved_settings.pipeline
 
     pdf_path = Path(path)
     if not pdf_path.is_file():
@@ -140,8 +142,8 @@ def load_pdf(path: Path, run_dir: Path | None = None) -> PdfInfo:
         file_size = pdf_path.stat().st_size
     except OSError as exc:
         raise IoFailure(f"Unable to stat PDF: {pdf_path.name}") from exc
-    if file_size > _MAX_FILE_SIZE:
-        raise PdfTooLarge("PDF exceeds the 20 MiB file limit")
+    if file_size > limits.max_pdf_mib * 1024 * 1024:
+        raise PdfTooLarge(f"PDF exceeds the {limits.max_pdf_mib} MiB file limit")
 
     digest = _sha256_file(pdf_path)
     try:
@@ -156,8 +158,8 @@ def load_pdf(path: Path, run_dir: Path | None = None) -> PdfInfo:
         raise PdfRenderFailed("Unable to enumerate PDF pages") from exc
     if page_count == 0:
         raise PdfEmpty("PDF contains zero pages")
-    if page_count > _MAX_PAGE_COUNT:
-        raise PdfTooLarge("PDF exceeds the 50 page limit")
+    if page_count > limits.max_pages:
+        raise PdfTooLarge(f"PDF exceeds the {limits.max_pages} page limit")
 
     pages: list[PageInfo] = []
     for number, page in enumerate(reader.pages, start=1):
@@ -180,7 +182,7 @@ def load_pdf(path: Path, run_dir: Path | None = None) -> PdfInfo:
         )
 
     if _render_required():
-        pages = _render_pages(pdf_path, pages, Path(run_dir) if run_dir is not None else _default_run_dir(pdf_path), _dpi())
+        pages = _render_pages(pdf_path, pages, Path(run_dir) if run_dir is not None else _default_run_dir(pdf_path), dpi)
     return PdfInfo(
         sha256=digest,
         page_count=page_count,
