@@ -46,6 +46,7 @@
 | A14 | S0 | source_code/pipeline/validate.py；tests/test_engineering_{fixtures,validate,package,write_repair}.py 与 tests/fixtures/engineering/run_*/（均在 source_code/）；docs/接口冻结清单_A-B.md；.parallel/{STATE,CLAIMS}.md 与 handoffs/A14.md。用户确认五项检查口径并扩容 write_repair 测试；B 夹具只读；before/after确认后逐份重生成快照 | 2026-11-14 15:39:29 +08:00 | 已释放 |
 
 | A14b | S0 | source_code/tests/test_engineering_faults.py、source_code/pipeline/codex_adapter.py（仅 turn.run 异常路径失败审计）、docs/fault-injection.md、.parallel/{STATE,CLAIMS}.md、.parallel/handoffs/A14b.md；按用户裁决回收 adapter 旧占用，其余 A6+A7 文件不动 | 2026-11-14 16:31:56 +08:00 | 已释放 |
+| A15-2 | S0 | source_code/pipeline/packaging.py、source_code/pipeline/validate.py、source_code/tests/test_engineering_package.py、.parallel/{STATE,CLAIMS}.md、.parallel/handoffs/A15-2.md；扫描包内 manifest.json/validation.json 的密钥形态，复用 scan_credential_shaped | 2026-11-14 17:40:00 +08:00 | 已释放 |
 
 ## 契约变更申请
 

@@ -26,6 +26,7 @@ from pipeline.packaging import (
     verify_zip,
     write_zip,
 )
+from pipeline.validate import scan_credential_shaped
 from pipeline.settings import PathsSettings, PipelineSettings, SecretValue, Settings, VisionSettings
 
 FIXTURES = Path(__file__).parent / "fixtures" / "engineering"
@@ -416,3 +417,81 @@ def test_package_missing_or_malformed_provider_fails_closed(tmp_path, manifest_p
 
     assert exit_code_for(caught.value) == 7
     _assert_no_outputs(tmp_path)
+
+
+def _package_ready_run(root: Path, material_id: str = "run_ok") -> Path:
+    run = _make_run(root, material_id)
+    manifest_path = run / "manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["config"] = {"vision.provider": {"value": "openai_codex", "source": "config"}}
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+    return run
+
+
+@pytest.mark.parametrize("text", [
+    "sk-secret-shaped",
+    '"api_key": "***"',
+    "api_key=***",
+    "token = actual-token-value",
+    "bearer actual-token-value",
+    "max_tokens=100",
+])
+def test_scan_credential_shaped_frozen_positive_and_negative_cases(text):
+    expected = text in {"sk-secret-shaped", "token = actual-token-value", "bearer actual-token-value"}
+    assert scan_credential_shaped(text) is expected
+
+
+def test_package_manifest_secret_shape_fails_before_outputs(tmp_path, capsys):
+    root = tmp_path / "runs"
+    run = _package_ready_run(root)
+    manifest = run / "manifest.json"
+    payload = json.loads(manifest.read_text(encoding="utf-8"))
+    payload["audit_note"] = "sk-secret-shaped"
+    manifest.write_text(json.dumps(payload), encoding="utf-8")
+    output = tmp_path / "submission.zip"
+    with pytest.raises(PackageFailure) as caught:
+        build_package(["run_ok"], output, _settings(root))
+    assert exit_code_for(caught.value) == 7
+    assert str(caught.value) == "manifest.json: Credential-shaped text detected"
+    assert "sk-secret-shaped" not in str(caught.value)
+    assert not output.exists() and not (tmp_path / "package_report.json").exists()
+    assert not list(tmp_path.glob(".package-*.tmp"))
+
+
+def test_package_masked_api_key_passes_existing_gate(tmp_path):
+    root = tmp_path / "runs"
+    run = _package_ready_run(root)
+    manifest = run / "manifest.json"
+    payload = json.loads(manifest.read_text(encoding="utf-8"))
+    payload["api_key"] = "***"
+    manifest.write_text(json.dumps(payload), encoding="utf-8")
+    report = build_package(["run_ok"], tmp_path / "submission.zip", _settings(root))
+    assert report.verified is True
+
+
+def test_package_manifest_token_shape_fails_before_outputs(tmp_path):
+    root = tmp_path / "runs"
+    run = _package_ready_run(root)
+    manifest = run / "manifest.json"
+    payload = json.loads(manifest.read_text(encoding="utf-8"))
+    payload["audit_note"] = "token = actual-token-value"
+    manifest.write_text(json.dumps(payload), encoding="utf-8")
+    output = tmp_path / "submission.zip"
+    with pytest.raises(PackageFailure) as caught:
+        build_package(["run_ok"], output, _settings(root))
+    assert exit_code_for(caught.value) == 7
+    assert str(caught.value) == "manifest.json: Credential-shaped text detected"
+    assert not output.exists() and not (tmp_path / "package_report.json").exists()
+
+
+def test_package_validation_bearer_shape_fails_before_outputs(tmp_path):
+    root = tmp_path / "runs"
+    run = _package_ready_run(root)
+    validation = run / "validation.json"
+    validation.write_text(validation.read_text(encoding="utf-8") + "\nbearer actual-token-value\n", encoding="utf-8")
+    output = tmp_path / "submission.zip"
+    with pytest.raises(PackageFailure) as caught:
+        build_package(["run_ok"], output, _settings(root))
+    assert exit_code_for(caught.value) == 7
+    assert str(caught.value) == "validation.json: Credential-shaped text detected"
+    assert not output.exists() and not (tmp_path / "package_report.json").exists()

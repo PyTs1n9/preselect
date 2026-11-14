@@ -37,6 +37,11 @@ _NUMBER = re.compile(
     r"(?![0-9_]|\.[0-9])"
 )
 _BODY_SECTIONS = frozenset(REQUIRED_SECTIONS[:-1])
+_CREDENTIAL_SHAPED = re.compile(
+    r"""(?ix)(?<![a-z0-9_])sk-[a-z0-9_-]*
+    | (?<![a-z0-9_])["']?(?:[a-z0-9]+_)*(?:api[_-]?key|access[_-]?token|auth[_-]?token|token|password|secret)["']?\s*[:=]\s*["']?[A-Za-z0-9][^\s"',;}\]]*
+    | (?<![a-z0-9_])bearer\s+[^\s"']+"""
+)
 
 
 def _issue(code: Code, path: str, message: str, hint: str = "") -> Issue:
@@ -175,17 +180,16 @@ def _check_markdown(raw: bytes, settings: Settings, name: str) -> tuple[list[Iss
     return issues, body, han_chars
 
 
+def scan_credential_shaped(text: str) -> bool:
+    """Return whether text contains the frozen credential-shaped pattern."""
+    return _CREDENTIAL_SHAPED.search(text) is not None
+
+
 def _check_sensitive(text: str, path: str) -> list[Issue]:
     """Scan original text, including metadata, code, comments and link targets."""
     issues: list[Issue] = []
-    secret = re.search(
-        r'''(?ix)(?<![a-z0-9_])sk-[a-z0-9_-]*
-        | (?<![a-z0-9_])["']?(?:[a-z0-9]+_)*(?:api[_-]?key|access[_-]?token|auth[_-]?token|token|password|secret)["']?\s*[:=]\s*["']?[^\s"',;}\]]+
-        | (?<![a-z0-9_])bearer\s+[^\s"']+''', text,
-    )
-    if secret:
+    if scan_credential_shaped(text):
         issues.append(_issue(Code.SECRET_LEAK, path, "Credential-shaped text detected", "Remove credentials from the artifact"))
-    # Ordinary web URLs can contain /home/ without naming a local directory.
     local_text = re.sub(r"https?://[^\s<>\"')]+", "", text, flags=re.IGNORECASE)
     if re.search(r"(?<![A-Za-z0-9])[A-Za-z]:[\\/]|/(?:Users|home)/", local_text):
         issues.append(_issue(Code.ABS_PATH_LEAK, path, "Local absolute path detected", "Use a portable relative reference"))

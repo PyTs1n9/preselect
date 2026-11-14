@@ -17,7 +17,7 @@ from .contracts import PackageReport, ValidationReport
 from .errors import Code, ConfigError, IoFailure, PipelineError
 from .manifest import utc_now
 from .settings import Settings
-from .validate import validate_run
+from .validate import scan_credential_shaped, validate_run
 
 MATERIAL_FILES = ("final.md", "validation.json", "manifest.json")
 REQUIRED_STAGES = ("write", "repair")
@@ -165,6 +165,19 @@ def collect_entries(runs: dict[str, Path]) -> list[tuple[str, Path]]:
     if len(names) != len(set(names)):
         raise PackageFailure("Duplicate ZIP entry name")
     return sorted(entries, key=lambda entry: entry[0])
+
+
+def _scan_packaged_json(entries: list[tuple[str, Path]]) -> None:
+    """Reject credential-shaped text in the JSON files that enter the ZIP."""
+    for _, source in entries:
+        if source.name not in {"manifest.json", "validation.json"}:
+            continue
+        try:
+            text = source.read_bytes().decode("utf-8", errors="surrogateescape")
+        except (OSError, UnicodeError):
+            raise PackageFailure(f"{source.name}: unable to scan JSON text") from None
+        if scan_credential_shaped(text):
+            raise PackageFailure(f"{source.name}: Credential-shaped text detected")
 
 
 def write_zip(entries: list[tuple[str, Path]], target: Path) -> dict[str, tuple[int, int]]:
@@ -351,6 +364,12 @@ def build_package(materials: list[str], out_path: Path, settings: Settings) -> P
         except OSError:
             raise PackageFailure(f"Unable to inspect {material_id}/final.md") from None
         _scan_run(run_dir, material_id)
+        runs[material_id] = run_dir
+
+    entries = collect_entries(runs)
+    _scan_packaged_json(entries)
+
+    for material_id, run_dir in runs.items():
         try:
             report = validate_run(run_dir, settings)
         except Exception:
@@ -367,9 +386,7 @@ def build_package(materials: list[str], out_path: Path, settings: Settings) -> P
             raise PackageFailure(f"Manifest vision.provider is missing or invalid for {material_id}")
         if provider == "replay":
             raise PackageFailure("回放产物不得打包")
-        runs[material_id] = run_dir
 
-    entries = collect_entries(runs)
     excluded = _excluded_files(runs)
     out_path = Path(out_path)
     report_path = out_path.parent / REPORT_NAME
