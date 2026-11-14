@@ -327,6 +327,13 @@ B 需要知道的唯一一点：**提示词文本与 skill 路径由 A 按 I4 �
 - A15 打包门槛：`checks.skipped` 必须为空才允许打包。
 - 若 `skipped` 非空仍要出报告，必须在报告外显式说明未覆盖项，不得口头带过。
 
+**A14-1 实现登记（2026-11-14，[待确认]）**：五项一致性检查现由 Python 确定性执行并列入
+`checks.enabled`；`checks.skipped` 恒为空数组。缺少 evidence 或 final/draft 仍按既有
+`ASSET_MISSING` issue 显式失败，不以 skipped 表示缺输入。`citations` 统计正文中成功解析的
+引用出现次数（重复计数，未知 ID 不计）；`unreferenced_evidence` 统计未被正文引用的 core
+事实数；`evidence_count` 仍为 schema-valid evidence 对象数 0/1。此项改变 skipped 的冻结语义，
+正式双签待补，不代任一方确认；`validation.schema.json` 结构和版本不变。
+
 ### 6.2 code 枚举（D1 冻结，B 的修复提示词依赖此表）
 
 | 类别 | code | 含义 |

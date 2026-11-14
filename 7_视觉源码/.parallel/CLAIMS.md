@@ -43,6 +43,8 @@
 
 | A19 | S0 | 本卡确认的 17 个白名单文件：pipeline/extract.py、pipeline/stages/recognize.py、pipeline/schema_loader.py；schemas/{table,figure,formula}.schema.json；prompts/{vision,table,figure,formula}.md；tests/test_engineering_{extract,stages,validate}.py（以上均在 source_code/）；docs/接口冻结清单_A-B.md、.parallel/{STATE,CLAIMS}.md、.parallel/handoffs/A19.md。用户已确认实施范围及 vision region 说明对齐既有 schema | 2026-11-14 15:04:50 +08:00 | 已释放 |
 
+| A14 | S0 | source_code/pipeline/validate.py；tests/test_engineering_{fixtures,validate,package,write_repair}.py 与 tests/fixtures/engineering/run_*/（均在 source_code/）；docs/接口冻结清单_A-B.md；.parallel/{STATE,CLAIMS}.md 与 handoffs/A14.md。用户确认五项检查口径并扩容 write_repair 测试；B 夹具只读；before/after确认后逐份重生成快照 | 2026-11-14 15:39:29 +08:00 | 已释放 |
+
 ## 契约变更申请
 
 > 需要改 `contracts.py` / `errors.py` 枚举 / `settings.py` 字段 / `config.json` 键 /

@@ -11,7 +11,7 @@
 | A9 | W1 | S2 | done | 0 | 八类中 5 类实现，5/6/8 锁 B 字段；`python -m pytest -q` 81 passed；评审修复见 handoffs/REVIEW-FIXES-2026-11-13.md |
 | A8 | W1 | S3 | done | 0 | `pytest -q` 137 passed；三阶段已实现并落盘登记；stub_prompts 为工程夹具、非运行资产；快照测试参数化收窄为 `glob("run_*")`；正式 run 停在 ASSET_MISSING 属计划内终点，见 handoffs/A8.md |
 | A11 | W2 | S3 | done | 0 | 162 passed；prompts/ 未交付，真实 run 停在 ASSET_MISSING 属计划内终点 |
-| A14 | W2 | S2 | todo | — | 先做 1–4 例 |
+| A14 | W2 | S0 | done | 0 | A14-1 五项一致性检查与 skipped 清零；320 passed（基线239，新增81），专项155 passed；五质量夹具目标code全中、must_not全无、skipped=[]；五工程快照经before/after确认后逐份重生成；原六故障注入顺延A14b，block/page/quote交叉核验留待后续 |
 | A15 | W2 | S3 | blocked | 7 | 门禁与读回机制、拒绝路径已交付并验收；7 为拒绝路径退出码；正向 exit=0 依赖 A14 关闭五项一致性检查或按 §11 变更 I6 第 290 行 |
 | A17 | W2 | S0 | done | 0 | evidence schema 1.0.0 落盘（B1 片段原样，A 未增删字段）；5 个工程夹具迁移并重生成 validation.json；194 passed 未降；I3 已登记，B 正式双签待补 |
 | A18 | W2 | S0 | done | 0 | recognition/document_ir 按 strict 模式落盘 1.0.0、evidence 升 1.0.1；识别改 5 页/批并校验页覆盖；写入改两段式（draft_en → draft）；201 passed。未覆盖：prompts/translate.md 未交付，真实 run 停在 ASSET_MISSING；block_id 交叉校验归 A14 |

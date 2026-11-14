@@ -125,16 +125,19 @@ def test_select_run_rejects_manifest_material_id_mismatch(tmp_path):
         select_run(root, "M1")
 
 
-def test_cli_valid_run_is_rejected_for_live_skipped_checks(tmp_path, monkeypatch, capsys):
-    root = tmp_path / "runs"
-    _make_run(root, "M1")
-    monkeypatch.setattr(main, "load_settings", lambda: _settings(root))
-    output = tmp_path / "submission.zip"
-    code = main.main(["package", "--materials", "M1", "--out", str(output)])
-    payload = json.loads(capsys.readouterr().out)
-    assert code == 7 and payload["error"]["code"] == "IO_FAILURE"
-    assert "skipped" in payload["error"]["message"]
+def test_explicit_skipped_report_is_rejected_component_level_not_end_to_end(tmp_path):
+    # A14 runs all five checks; use an explicit input to prove this gate alone.
+    skipped = ["CITE_NOT_IN_EVIDENCE", "EVIDENCE_UNREFERENCED", "NUMBER_MISMATCH",
+               "UNIT_MISSING", "MATERIAL_MISMATCH"]
+    manifest = _manifest("r1", "M1", "2026-11-14T09:00:00Z")
+    report = _valid_report(skipped)
+    with pytest.raises(PackageFailure) as caught:
+        evaluate_gate("M1", manifest, report)
+    assert exit_code_for(caught.value) == 7 and caught.value.code == "IO_FAILURE"
+    assert "skipped" in str(caught.value)
+    assert all(code in str(caught.value) for code in skipped)
     _assert_no_outputs(tmp_path)
+    print("组件级证明，非端到端")
 
 
 def test_cli_invalid_report_maps_to_schema_invalid_exit_four(tmp_path, monkeypatch, capsys):

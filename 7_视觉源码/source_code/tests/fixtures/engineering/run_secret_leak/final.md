@@ -1,7 +1,8 @@
+<!-- material_id: run_secret_leak -->
 # 工程校验样本
 
 ## 引言
-这是确定性校验器的合成输入。
+这是确定性校验器的合成输入。[F001]
 
 ## 正文
 sk-synthetic-fixture-not-a-real-credential

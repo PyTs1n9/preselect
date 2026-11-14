@@ -24,7 +24,7 @@ from pipeline.stages import evidence, normalize, recognize
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = Path(__file__).parent / "fixtures" / "engineering"
 STUB_PROMPTS = FIXTURES / "stub_prompts"
-SHORT = "# 工程验证\n\n## 引言\n简述。\n\n## 正文\n短稿。\n\n## 总结\n总结。\n\n## 来源\n合成证据。\n"
+SHORT = "<!-- material_id: run_ok -->\n# 工程验证\n\n## 引言\n简述[F001]。\n\n## 正文\n短稿。\n\n## 总结\n总结。\n\n## 来源\n合成证据。\n"
 LONG = SHORT.replace("短稿。", "工程测试合成正文" * 380)
 FAKE_KEY = "sk-offline-write-repair-only"
 
@@ -68,7 +68,7 @@ def ctx(tmp_path):
         "paths.skills_dir": str(ROOT / "skills"),
         "paths.result_dir": str(tmp_path / "runs"),
     }, require_secret=False)
-    return RunContext("write-repair-run", "engineering", tmp_path / "run", settings, {"source_pdf": pdf})
+    return RunContext("write-repair-run", "run_ok", tmp_path / "run", settings, {"source_pdf": pdf})
 
 
 class FakeProvider:
@@ -148,10 +148,7 @@ def _assert_valid_final(ctx, validation_reads):
     assert validation_reads[-1] == ("final.md", True)
     # I6 has no top-level artifact path. Trace the real final-file read instead.
     assert "path" not in report
-    assert set(report["checks"]["skipped"]) == {
-        "CITE_NOT_IN_EVIDENCE", "EVIDENCE_UNREFERENCED", "NUMBER_MISMATCH",
-        "UNIT_MISSING", "MATERIAL_MISMATCH",
-    }
+    assert set(report["checks"]["skipped"]) == set()
 
 
 def test_writer_reads_only_evidence_and_writes_plain_lf(ctx, fake):
