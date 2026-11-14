@@ -31,6 +31,8 @@
 | A11 | S3 | source_code/tests/test_engineering_stages.py（批 2） | 2026-11-14 08:51:24 +08:00 | 已释放 |
 | A11 | S3 | source_code/tests/fixtures/engineering/stub_prompts/writer.md（批 3） | 2026-11-14 08:57:44 +08:00 | 已释放 |
 | A11 | S3 | source_code/tests/fixtures/engineering/stub_prompts/repair.md（批 3） | 2026-11-14 08:57:44 +08:00 | 已释放 |
+| A15 | S3 | source_code/pipeline/packaging.py | 2026-11-14 10:15:09 +08:00 | 已释放 |
+| A15 | S3 | source_code/tests/test_engineering_package.py | 2026-11-14 10:15:09 +08:00 | 已释放 |
 
 ## 契约变更申请
 
@@ -40,3 +42,4 @@
 | 申请方 | 目标文件 | 变更内容 | 理由 | 裁决 |
 |---|---|---|---|---|
 | S0 | W0 共享内核 | 按本次用户明确指令完成 W0，包括 validation 的 issues 对齐 | 用户再次明确“你来采用最优解修复W0范围” | 本次 W0 执行授权；不代表 A/B 已双签，不代签；其余业务 schema 不改 |
+| A15 | S3 | I2 package_report.json 位置 | D1 放在 ZIP 同目录，与 I2 运行目录清单冲突；记录契约变更申请 | 待 S0 裁决 |

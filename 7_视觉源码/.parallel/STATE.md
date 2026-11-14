@@ -12,7 +12,7 @@
 | A8 | W1 | S3 | done | 0 | `pytest -q` 137 passed；三阶段已实现并落盘登记；stub_prompts 为工程夹具、非运行资产；快照测试参数化收窄为 `glob("run_*")`；正式 run 停在 ASSET_MISSING 属计划内终点，见 handoffs/A8.md |
 | A11 | W2 | S3 | done | 0 | 162 passed；prompts/ 未交付，真实 run 停在 ASSET_MISSING 属计划内终点 |
 | A14 | W2 | S2 | todo | — | 先做 1–4 例 |
-| A15 | W2 | S3 | todo | — | packaging.py 仍是 10 行骨架 |
+| A15 | W2 | S3 | blocked | 7 | 门禁与读回机制、拒绝路径已交付并验收；7 为拒绝路径退出码；正向 exit=0 依赖 A14 关闭五项一致性检查或按 §11 变更 I6 第 290 行
 | A10 | W2 | S0 | todo | — | 端到端，只跑不改 |
 | A13 | W3 | S0 | todo | — | 四份材料串行 |
 | A16 | W3 | S0 | todo | — | 干净环境 |
