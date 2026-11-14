@@ -34,6 +34,8 @@
 | A15 | S3 | source_code/pipeline/packaging.py | 2026-11-14 10:15:09 +08:00 | 已释放 |
 | A15 | S3 | source_code/tests/test_engineering_package.py | 2026-11-14 10:15:09 +08:00 | 已释放 |
 
+| A15-R | S3 | source_code/pipeline/packaging.py | 2026-11-14 10:56:46 +08:00 | 已释放 |
+| A15-R | S3 | source_code/tests/test_engineering_package.py | 2026-11-14 10:56:46 +08:00 | 已释放 |
 ## 契约变更申请
 
 > 需要改 `contracts.py` / `errors.py` 枚举 / `settings.py` 字段 / `config.json` 键 /

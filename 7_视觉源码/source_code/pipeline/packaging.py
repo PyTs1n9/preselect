@@ -62,31 +62,35 @@ def select_run(result_dir: Path, material_id: str) -> Path:
         raise PackageFailure(f"Unable to list runs for {material_id}") from None
     for run_dir in children:
         if run_dir.is_symlink():
-            raise PackageFailure(f"Unsafe run directory for {material_id}")
+            raise PackageFailure(f"Unsafe run directory for {material_id}/{run_dir.name}")
         if not run_dir.is_dir():
             continue
         manifest_path = run_dir / "manifest.json"
         if manifest_path.is_symlink():
-            raise PackageFailure(f"Unsafe manifest file for {material_id}")
+            raise PackageFailure(f"Unsafe manifest file for {material_id}/{run_dir.name}")
         if not manifest_path.is_file():
             continue
         try:
             manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         except (OSError, UnicodeError, json.JSONDecodeError):
-            raise PackageFailure(f"Invalid manifest for {material_id}") from None
+            raise PackageFailure(f"Invalid manifest for {material_id}/{run_dir.name}") from None
         if not isinstance(manifest, dict) or manifest.get("material_id") != material_id:
-            raise PackageFailure(f"Manifest material_id mismatch for {material_id}")
+            raise PackageFailure(f"Manifest material_id mismatch for {material_id}/{run_dir.name}")
         manifest_run_id = manifest.get("run_id")
         if manifest_run_id is not None and manifest_run_id != run_dir.name:
-            raise PackageFailure(f"Manifest run_id mismatch for {material_id}")
-        started = _parse_started_at(manifest.get("started_at"), material_id)
+            raise PackageFailure(f"Manifest run_id mismatch for {material_id}/{run_dir.name}")
+        try:
+            started = _parse_started_at(manifest.get("started_at"), material_id)
+        except PackageFailure as exc:
+            raise PackageFailure(f"{exc.message} for {material_id}/{run_dir.name}") from None
         candidates.append((started, run_dir))
     if not candidates:
         raise PackageFailure(f"No manifest-backed runs for {material_id}")
     latest = max(started for started, _ in candidates)
     matches = [run_dir for started, run_dir in candidates if started == latest]
     if len(matches) != 1:
-        raise PackageFailure(f"Latest run timestamp is ambiguous for {material_id}")
+        locations = ", ".join(f"{material_id}/{run_dir.name}" for run_dir in matches)
+        raise PackageFailure(f"Latest run timestamp is ambiguous for {locations}")
     return matches[0]
 
 
@@ -94,10 +98,10 @@ def evaluate_gate(material_id: str, manifest: dict, report: ValidationReport) ->
     """Apply the frozen I6 and stage-completion gates in their required order."""
     if report.valid is not True:
         raise PipelineError(Code.SCHEMA_INVALID, f"Validation failed for {material_id}")
-    try:
-        skipped = report.checks.get("skipped")
-    except (AttributeError, TypeError):
-        raise PackageFailure(f"Validation checks are invalid for {material_id}") from None
+    checks = report.checks
+    if not isinstance(checks, dict) or "skipped" not in checks or not isinstance(checks["skipped"], list):
+        raise PackageFailure(f"Validation checks are unreadable for {material_id}")
+    skipped = checks["skipped"]
     if skipped:
         codes = ", ".join(sorted(str(code) for code in skipped))
         raise PackageFailure(f"Validation checks skipped for {material_id}: {codes}")
@@ -232,6 +236,7 @@ def _source_signatures(entries: list[tuple[str, Path]]) -> dict[str, tuple[int, 
 
 def _write_report(path: Path, report: PackageReport) -> None:
     temporary = None
+    failure = None
     payload = {"entries": report.entries, "excluded": report.excluded,
                "verified": report.verified, "built_at": report.built_at}
     try:
@@ -244,10 +249,15 @@ def _write_report(path: Path, report: PackageReport) -> None:
         os.replace(temporary, path)
         temporary = None
     except (OSError, ValueError, TypeError):
-        raise PackageFailure("Unable to write package report") from None
+        failure = PackageFailure("Unable to write package report")
+        raise failure from None
     finally:
         if temporary is not None:
-            _remove_generated(temporary, "temporary package report")
+            try:
+                _remove_generated(temporary, "temporary package report")
+            except PackageFailure:
+                if failure is None:
+                    raise
 
 
 def _remove_generated(path: Path, description: str) -> None:
@@ -304,15 +314,24 @@ def _write_archive_atomically(entries: list[tuple[str, Path]], out_path: Path) -
         return {name: (size, crc, signatures[name][2]) for name, (size, crc) in written.items()}
     except PackageFailure:
         if published:
-            _remove_generated(out_path, "published package ZIP")
+            try:
+                _remove_generated(out_path, "published package ZIP")
+            except PackageFailure:
+                pass
         raise
     except OSError:
         if published:
-            _remove_generated(out_path, "published package ZIP")
+            try:
+                _remove_generated(out_path, "published package ZIP")
+            except PackageFailure:
+                pass
         raise PackageFailure("Unable to publish package ZIP") from None
     finally:
         if temporary is not None:
-            _remove_generated(temporary, "temporary package ZIP")
+            try:
+                _remove_generated(temporary, "temporary package ZIP")
+            except PackageFailure:
+                pass
 
 
 def build_package(materials: list[str], out_path: Path, settings: Settings) -> PackageReport:
@@ -367,7 +386,11 @@ def build_package(materials: list[str], out_path: Path, settings: Settings) -> P
     try:
         _write_report(report_path, package_report)
     except Exception:
-        _remove_generated(out_path, "package ZIP after report failure")
-        _remove_generated(report_path, "package report after report failure")
+        for path, description in ((out_path, "package ZIP after report failure"),
+                                  (report_path, "package report after report failure")):
+            try:
+                _remove_generated(path, description)
+            except PackageFailure:
+                pass
         raise
     return package_report

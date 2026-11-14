@@ -309,3 +309,30 @@ def test_unsafe_empty_or_duplicate_material_ids_map_to_config_exit_two(tmp_path,
         build_package(materials, tmp_path / "submission.zip", settings)
     assert exit_code_for(caught.value) == 2
     assert not (tmp_path / "submission.zip").exists()
+
+
+@pytest.mark.parametrize("checks", [{"enabled": [], "skipped": None}, {"enabled": []}])
+def test_gate_rejects_unreadable_skipped(checks):
+    manifest = _manifest("r1", "M1", "2026-11-14T09:00:00Z")
+    report = ValidationReport(True, "1.1.0", "2026-11-14T09:00:00Z", {}, [], checks)
+    with pytest.raises(PackageFailure, match="Validation checks are unreadable for M1") as caught:
+        evaluate_gate("M1", manifest, report)
+    assert exit_code_for(caught.value) == 7
+
+
+def test_gate_still_accepts_empty_skipped_list():
+    manifest = _manifest("r1", "M1", "2026-11-14T09:00:00Z")
+    report = ValidationReport(True, "1.1.0", "2026-11-14T09:00:00Z", {}, [],
+                              {"enabled": [], "skipped": []})
+    evaluate_gate("M1", manifest, report)
+
+
+def test_select_run_failure_message_names_the_run_directory(tmp_path):
+    root = tmp_path / "runs"
+    run = _make_run(root, "M1", "bad-run")
+    manifest = json.loads((run / "manifest.json").read_text(encoding="utf-8"))
+    manifest["material_id"] = "M2"
+    (run / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+    with pytest.raises(PackageFailure) as caught:
+        select_run(root, "M1")
+    assert "M1" in str(caught.value) and "bad-run" in str(caught.value)
