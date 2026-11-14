@@ -1,23 +1,49 @@
-# PDF Vision Skill
+---
+name: pdf-vision
+description: 把 PDF 页面图像逐页转成可追溯的识别 JSON（稳定 block_id、逐字原文、归一化页内区域），供结构归一化与证据抽取使用。仅在需要从 PDF 页面图像生成 recognition JSON 时使用。
+---
 
-## Purpose
+# PDF Vision
 
-Convert PDF pages into traceable structured data with a vision model, then validate
-and repair the result without losing source evidence.
+## 何时生效
 
-## Required flow
+你在识别阶段被调用：输入是若干页 PNG 图像与页数，输出一个 recognition JSON 对象。
+结构归一化、事实抽取、翻译写作、校验与修复都由其他阶段完成，不在你的职责内。
 
-1. Read PDF metadata and renderable page references.
-2. Send page images and extraction instructions to the configured vision provider.
-3. Normalize the provider response into the document IR.
-4. Attach page and region evidence to every extracted claim.
-5. Validate against the JSON Schemas in `schemas/`.
-6. Repair only validation failures, and record each repair attempt.
-7. Write a run manifest and all intermediate artifacts under `result/runs/`.
+## 输出契约
 
-## Quality rules
+- 只输出一个 JSON 对象。不要输出 Markdown、代码围栏、解释、前言或结语。
+- 顶层键 `pages`，元素为页对象，按 `page_number` 升序。
+- 页对象含 `page_number`（从 1 开始）与 `blocks`（数组，顺序即阅读顺序）。
+- 每个 block 含 `block_id`、`text`，可选 `region`。
 
-- Never invent text that is not supported by a page image or OCR result.
-- Keep coordinates in source-page pixels and include the page number.
-- Preserve the raw provider response for auditability.
-- Fail closed when required evidence or schema validation is missing.
+## 坐标（归一化）
+
+`region` 是数组，一个 block 可覆盖多个区域；每项写成 `{"x0","y0","x1","y1"}`，
+取值为 0–1 的浮点数，原点在左上，`x` 向右、`y` 向下，按整页宽高归一化。
+不得使用像素、点（pt）或百分比字符串。
+
+## 硬规则
+
+1. **逐页覆盖**：输入 N 页就必须输出 1..N 每页恰好一次，不重不漏。
+2. **逐字转录原文**：不翻译、不改写、不纠错别字、不合并段落、不补全被裁切的词，保留原文标点与大小写。翻译发生在写作阶段，不在识别阶段。
+3. **不臆造**：图像模糊、被遮挡、裁切导致无法辨认时，保留该区域的 block，`text` 留空字符串，用 `region` 标出位置。禁止根据上下文猜测内容。
+4. **block_id 稳定**：页内唯一、形如 `B001`，按阅读顺序编号；同一页重复识别时编号规则一致。
+5. **阅读顺序**：单栏自上而下；多栏按列优先；图注紧随其图。
+6. **表格**：每个单元格一个 block，按行优先顺序输出；单元格文本逐字保留；不要把整张表合并成一段文本。
+7. **公式**：保留可见字符的线性写法（如 `R = k * C`），不使用 LaTeX 记号，不补全无法辨认的符号、不编造其含义。
+8. **只转录**：不总结、不分章、不评价、不补充页面之外的背景知识。
+9. **不猜元数据**：标题、作者、期刊等由上游提供，不要凭图像推断。
+
+## 失败处理
+
+- 某页图像缺失或整页不可辨：仍然输出该页对象，`blocks` 为空数组，不要用占位文本填充。
+- 任何情况下都不要为了"看起来完整"而虚构 block。
+
+## 自检（提交前逐条过）
+
+- [ ] `pages` 长度等于输入的页数，`page_number` 恰好覆盖 1..N
+- [ ] 每个 block 的 `block_id` 页内唯一，且从 `B001` 连续
+- [ ] 每个 `text` 为空的 block 都带 `region`
+- [ ] 所有 `region` 项的四个值都在 0–1 之间，且 `x0 < x1`、`y0 < y1`
+- [ ] 输出是纯 JSON，能被 `json.loads` 直接解析
