@@ -23,6 +23,14 @@
 | A6+A7 | S1 | source_code/pipeline/vision_provider.py | 2026-11-13 20:48 | 占用中 |
 | A6+A7 | S1 | source_code/tests/test_engineering_input.py | 2026-11-13 20:48 | 占用中 |
 | A8 | S3 | source_code/pipeline/prompt_loader.py、source_code/pipeline/stages/{_shared,recognize,normalize,evidence}.py、source_code/tests/test_engineering_stages.py、source_code/tests/test_engineering_fixture_snapshot.py（跨卡，仅改 1 行参数化）、source_code/tests/fixtures/engineering/stub_prompts/{vision,normalize,evidence}.md | 2026-11-14 00:30（事后补登：A8 未在开工前登记） | 已释放 |
+| A11 | S3 | source_code/pipeline/writer.py（批 1） | 2026-11-14 08:49:49 +08:00 | 已释放 |
+| A11 | S3 | source_code/pipeline/repair.py（批 1） | 2026-11-14 08:49:49 +08:00 | 已释放 |
+| A11 | S3 | source_code/pipeline/stages/write.py（批 1） | 2026-11-14 08:49:49 +08:00 | 已释放 |
+| A11 | S3 | source_code/pipeline/stages/repair.py（批 2） | 2026-11-14 08:51:24 +08:00 | 已释放 |
+| A11 | S3 | source_code/tests/test_engineering_write_repair.py（批 2） | 2026-11-14 08:51:24 +08:00 | 已释放 |
+| A11 | S3 | source_code/tests/test_engineering_stages.py（批 2） | 2026-11-14 08:51:24 +08:00 | 已释放 |
+| A11 | S3 | source_code/tests/fixtures/engineering/stub_prompts/writer.md（批 3） | 2026-11-14 08:57:44 +08:00 | 已释放 |
+| A11 | S3 | source_code/tests/fixtures/engineering/stub_prompts/repair.md（批 3） | 2026-11-14 08:57:44 +08:00 | 已释放 |
 
 ## 契约变更申请
 

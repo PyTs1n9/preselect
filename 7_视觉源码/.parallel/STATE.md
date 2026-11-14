@@ -10,7 +10,7 @@
 | A7 | W1 | S1 | doing | — | codex_adapter 已重写为 SDK 版，`generate()` 实测返回 completed |
 | A9 | W1 | S2 | done | 0 | 八类中 5 类实现，5/6/8 锁 B 字段；`python -m pytest -q` 81 passed；评审修复见 handoffs/REVIEW-FIXES-2026-11-13.md |
 | A8 | W1 | S3 | done | 0 | `pytest -q` 137 passed；三阶段已实现并落盘登记；stub_prompts 为工程夹具、非运行资产；快照测试参数化收窄为 `glob("run_*")`；正式 run 停在 ASSET_MISSING 属计划内终点，见 handoffs/A8.md |
-| A11 | W2 | S1 | todo | — | writer/repair 仍是 9 行骨架 |
+| A11 | W2 | S3 | done | 0 | 162 passed；prompts/ 未交付，真实 run 停在 ASSET_MISSING 属计划内终点 |
 | A14 | W2 | S2 | todo | — | 先做 1–4 例 |
 | A15 | W2 | S3 | todo | — | packaging.py 仍是 10 行骨架 |
 | A10 | W2 | S0 | todo | — | 端到端，只跑不改 |
