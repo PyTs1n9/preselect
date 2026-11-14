@@ -1,4 +1,19 @@
 {
-  "page_number": 1,
-  "quote": "仅用于校验器工程测试的合成文本。"
+  "material_id": "run_missing_section",
+  "facts": [
+    {
+      "fact_id": "F001",
+      "core": true,
+      "page_number": [
+        1
+      ],
+      "block_id": [
+        "B001"
+      ],
+      "quote": "仅用于校验器工程测试的合成文本。",
+      "value": null,
+      "unit": null,
+      "value_text": "合成文本"
+    }
+  ]
 }

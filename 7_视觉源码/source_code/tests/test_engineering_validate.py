@@ -205,7 +205,13 @@ def _make_run(run_dir):
     artifacts = {
         "recognition.json": {"pages": []},
         "document_ir.json": {"document_id": "engineering", "source": {}, "pages": [], "blocks": []},
-        "evidence.json": {"page_number": 1, "quote": "工程文本"},
+        "evidence.json": {
+            "material_id": "engineering",
+            "facts": [{
+                "fact_id": "F001", "core": True, "page_number": [1], "block_id": ["B001"],
+                "quote": "工程文本", "value": None, "unit": None,
+            }],
+        },
     }
     for name, payload in artifacts.items():
         (run_dir / name).write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")

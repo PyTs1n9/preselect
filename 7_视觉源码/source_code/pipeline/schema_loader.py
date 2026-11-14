@@ -20,6 +20,9 @@ SCHEMA_DIALECT = "https://json-schema.org/draft/2020-12/schema"
 # field fragments are still owned by B and lack a schema_version field.
 SUPPORTED_VERSIONS: dict[str, frozenset[str]] = {
     "validation": frozenset({"1.1.0"}),
+    # B1 lands the first declared evidence version; recognition and document_ir
+    # still have no schema_version and therefore no version gate yet.
+    "evidence": frozenset({"1.0.0"}),
 }
 
 

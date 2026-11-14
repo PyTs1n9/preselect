@@ -38,6 +38,8 @@
 | A15-R | S3 | source_code/tests/test_engineering_package.py | 2026-11-14 10:56:46 +08:00 | 已释放 |
 | A1 | S3 | source_code/provider_capabilities.json | 2026-11-14 11:07:57 +08:00 | 已释放 |
 | A1 | S3 | .parallel/handoffs/A1.md | 2026-11-14 11:07:57 +08:00 | 已释放 |
+| A17 | S0 | source_code/schemas/evidence.schema.json、source_code/pipeline/schema_loader.py、source_code/tests/test_engineering_validate.py、source_code/tests/fixtures/engineering/run_*/{evidence,validation}.json、docs/接口冻结清单_A-B.md（事后补登：用户直接指令下开工） | 2026-11-14 11:41:20 +08:00 | 已释放 |
+
 ## 契约变更申请
 
 > 需要改 `contracts.py` / `errors.py` 枚举 / `settings.py` 字段 / `config.json` 键 /
