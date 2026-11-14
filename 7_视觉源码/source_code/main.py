@@ -48,6 +48,11 @@ def _run(args: argparse.Namespace) -> dict:
     return execute_run(args.pdf, material_id, args.output, settings, args.stage)
 
 
+def _doctor(args: argparse.Namespace) -> dict:
+    settings = load_settings(require_secret=not args.offline)
+    return {"config": settings.describe(), "warnings": settings.unknown_keys()}
+
+
 def _resolve_run_dir(result_dir: Path, run_id: str) -> Path:
     """Accept both ``<run_id>`` and ``<material_id>/<run_id>`` per I2 layout."""
 
