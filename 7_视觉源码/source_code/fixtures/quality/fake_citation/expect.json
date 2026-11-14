@@ -1,0 +1,16 @@
+{
+  "case": "fake_citation",
+  "description": "正文引用 F002，但 evidence 只声明 F001。",
+  "artifact": "final.md",
+  "expect_codes": [
+    "CITE_NOT_IN_EVIDENCE"
+  ],
+  "severity": "error",
+  "must_not_codes": [
+    "EVIDENCE_UNREFERENCED",
+    "MATERIAL_MISMATCH",
+    "NUMBER_MISMATCH",
+    "UNIT_MISSING"
+  ],
+  "notes": "B1 质量夹具；仅主攻一个一致性 code，供 A14 后续实现与验收。"
+}

@@ -1,0 +1,16 @@
+{
+  "case": "evidence_unreferenced",
+  "description": "evidence 有核心事实 F001，正文没有任何事实引用。",
+  "artifact": "final.md",
+  "expect_codes": [
+    "EVIDENCE_UNREFERENCED"
+  ],
+  "severity": "error",
+  "must_not_codes": [
+    "CITE_NOT_IN_EVIDENCE",
+    "MATERIAL_MISMATCH",
+    "NUMBER_MISMATCH",
+    "UNIT_MISSING"
+  ],
+  "notes": "B1 质量夹具；仅主攻一个一致性 code，供 A14 后续实现与验收。"
+}

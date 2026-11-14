@@ -1,0 +1,16 @@
+{
+  "case": "unit_missing",
+  "description": "正文引用数值但没有写出 evidence 中的百分比单位。",
+  "artifact": "final.md",
+  "expect_codes": [
+    "UNIT_MISSING"
+  ],
+  "severity": "error",
+  "must_not_codes": [
+    "CITE_NOT_IN_EVIDENCE",
+    "EVIDENCE_UNREFERENCED",
+    "MATERIAL_MISMATCH",
+    "NUMBER_MISMATCH"
+  ],
+  "notes": "B1 质量夹具；仅主攻一个一致性 code，供 A14 后续实现与验收。"
+}

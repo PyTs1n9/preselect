@@ -1,0 +1,20 @@
+{
+  "material_id": "M-NUMBER",
+  "facts": [
+    {
+      "fact_id": "F001",
+      "core": true,
+      "page_number": [
+        1
+      ],
+      "block_id": [
+        "B001"
+      ],
+      "quote": "比例为九十二百分比。",
+      "value": 92,
+      "value_text": "92%",
+      "unit": "%",
+      "region": null
+    }
+  ]
+}

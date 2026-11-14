@@ -1,0 +1,20 @@
+{
+  "material_id": "M-UNREFERENCED",
+  "facts": [
+    {
+      "fact_id": "F001",
+      "core": true,
+      "page_number": [
+        1
+      ],
+      "block_id": [
+        "B001"
+      ],
+      "quote": "样本事实。",
+      "value": null,
+      "value_text": "样本事实",
+      "unit": null,
+      "region": null
+    }
+  ]
+}

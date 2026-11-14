@@ -1,0 +1,16 @@
+{
+  "case": "material_mismatch",
+  "description": "final.md 的 material_id 与 evidence.json 不一致。",
+  "artifact": "final.md",
+  "expect_codes": [
+    "MATERIAL_MISMATCH"
+  ],
+  "severity": "error",
+  "must_not_codes": [
+    "CITE_NOT_IN_EVIDENCE",
+    "EVIDENCE_UNREFERENCED",
+    "NUMBER_MISMATCH",
+    "UNIT_MISSING"
+  ],
+  "notes": "B1 质量夹具；仅主攻一个一致性 code，供 A14 后续实现与验收。"
+}
