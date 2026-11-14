@@ -60,6 +60,8 @@ class PipelineSettings:
     keep_intermediate: bool
     body_min_han: int = 2500
     body_max_han: int = 4000
+    max_pdf_mib: int = 20
+    max_pages: int = 100
 
 
 @dataclass(frozen=True)
@@ -97,6 +99,8 @@ class Settings:
             "pipeline.keep_intermediate": self.pipeline.keep_intermediate,
             "pipeline.body_min_han": self.pipeline.body_min_han,
             "pipeline.body_max_han": self.pipeline.body_max_han,
+            "pipeline.max_pdf_mib": self.pipeline.max_pdf_mib,
+            "pipeline.max_pages": self.pipeline.max_pages,
             "paths.result_dir": self.paths.result_dir,
             "paths.prompts_dir": self.paths.prompts_dir,
             "paths.skills_dir": self.paths.skills_dir,
@@ -136,6 +140,8 @@ _DEFAULTS: dict[str, Any] = {
     "pipeline.keep_intermediate": True,
     "pipeline.body_min_han": 2500,
     "pipeline.body_max_han": 4000,
+    "pipeline.max_pdf_mib": 20,
+    "pipeline.max_pages": 100,
     "paths.result_dir": "result/runs",
     "paths.prompts_dir": "prompts",
     "paths.skills_dir": "skills",
@@ -156,6 +162,8 @@ _ENV_NAMES: dict[str, str] = {
     "pipeline.keep_intermediate": "PIPELINE_KEEP_INTERMEDIATE",
     "pipeline.body_min_han": "PIPELINE_BODY_MIN_HAN",
     "pipeline.body_max_han": "PIPELINE_BODY_MAX_HAN",
+    "pipeline.max_pdf_mib": "PIPELINE_MAX_PDF_MIB",
+    "pipeline.max_pages": "PIPELINE_MAX_PAGES",
     "paths.result_dir": "PATHS_RESULT_DIR",
     "paths.prompts_dir": "PATHS_PROMPTS_DIR",
     "paths.skills_dir": "PATHS_SKILLS_DIR",
@@ -185,6 +193,10 @@ _CLI_ALIASES: dict[str, str] = {
     "body_max_han": "pipeline.body_max_han",
     "pipeline_body_min_han": "pipeline.body_min_han",
     "pipeline_body_max_han": "pipeline.body_max_han",
+    "max_pdf_mib": "pipeline.max_pdf_mib",
+    "max_pages": "pipeline.max_pages",
+    "pipeline_max_pdf_mib": "pipeline.max_pdf_mib",
+    "pipeline_max_pages": "pipeline.max_pages",
     "api_key": "vision.api_key",
     "openai_api_key": "vision.api_key",
     "vision_provider": "vision.provider",
@@ -219,6 +231,8 @@ _CASTERS: dict[str, Callable[[Any], Any]] = {
     "pipeline.keep_intermediate": bool,
     "pipeline.body_min_han": int,
     "pipeline.body_max_han": int,
+    "pipeline.max_pdf_mib": int,
+    "pipeline.max_pages": int,
     "paths.result_dir": Path,
     "paths.prompts_dir": Path,
     "paths.skills_dir": Path,
@@ -382,7 +396,7 @@ def _convert(name: str, value: Any) -> Any:
         raise ConfigError(f"Invalid empty value for {name}")
     if isinstance(converted, float) and not math.isfinite(converted):
         raise ConfigError(f"Invalid non-finite value for {name}")
-    if name in {"vision.dpi", "vision.timeout_s"} and converted <= 0:
+    if name in {"vision.dpi", "vision.timeout_s", "pipeline.max_pdf_mib", "pipeline.max_pages"} and converted <= 0:
         raise ConfigError(f"Expected positive value for {name}")
     if isinstance(converted, (int, float)) and converted < 0 and name in {
         "vision.timeout_s",
@@ -464,6 +478,8 @@ def load_settings(
             keep_intermediate=resolved["pipeline.keep_intermediate"],
             body_min_han=resolved["pipeline.body_min_han"],
             body_max_han=resolved["pipeline.body_max_han"],
+            max_pdf_mib=resolved["pipeline.max_pdf_mib"],
+            max_pages=resolved["pipeline.max_pages"],
         ),
         paths=PathsSettings(
             result_dir=resolved["paths.result_dir"],
