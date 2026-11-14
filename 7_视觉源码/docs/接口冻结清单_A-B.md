@@ -548,18 +548,22 @@ source_code/fixtures/quality/<case_name>/
 
 | 接口 | A 确认 | B 确认 | 冻结 commit | 备注 |
 |---|---|---|---|---|
-| I1 CLI | ☐ | ☐ | | |
-| I2 运行目录 | ☐ | ☐ | | |
-| I3 Schema | ☐ | ☐ | | 七份 schema 已于 2026-11-14 全部落盘（版本见 I3 表），"空壳"表述作废；待 B 确认字段语义 |
-| I4 内容资产 | ☐ | ☐ | | 现存 8 个提示词 + 1 个 Skill；`translate.md` 属 B 待交项，缺失时 write 阶段 `ASSET_MISSING` 失败 |
-| I5 模型调用 | ☐ | ☐ | | |
+| I1 CLI | ☑ | ☐ | eafb5cb（代码侧） | `--json` 单行、缺省 material_id 向 stderr 告警、`--resume` 断点重跑均有测试 |
+| I2 运行目录 | ☑ | ☐ | eafb5cb（代码侧） | 布局与 recognize 产物已证；完整链路待 B01/B10 |
+| I3 Schema | ☑ | ☐ | eafb5cb（代码侧） | 七份 schema 落盘（evidence 1.0.2）；待 B 确认字段语义 |
+| I4 内容资产 | ☑ | ☐ | eafb5cb（代码侧） | 8 个提示词 + 1 个 Skill；`translate.md` 属 B 待交项 |
+| I5 模型调用 | ☐ | ☐ | | A 侧未确认：run 内实例复用与 SDK 退避未按 I5 落地（G1-B05 另卡） |
 | I6 校验与 code | ☑ | ☐ | 23c237b（代码侧） | issues 对象已落地；A 侧 2026-11-13 确认 AUTH_MISSING 不入枚举 |
 | I7 状态与退出码 | ☑ | ☐ | 23c237b（代码侧） | A 侧 2026-11-13 确认 AUTH_MISSING→2、validate `valid=false`→4 |
-| I8 Manifest | ☐ | ☐ | | |
-| I9 Stage 注册 | ☐ | ☐ | | B 可选使用 |
-| I10 夹具契约 | ☐ | ☐ | | |
+| I8 Manifest | ☑ | ☐ | eafb5cb（代码侧） | assets/code/deps/calls/cache.key 已汇总；新 run 三组哈希可逐个复算 |
+| I9 Stage 注册 | ☑ | ☐ | eafb5cb（代码侧） | `register_stage` 与注册表驱动执行已实现；B 可选使用 |
+| I10 夹具契约 | ☑ | ☐ | eafb5cb（代码侧） | 缺失转 skipped 并由 verify 门禁标红；仍待 B 补齐 quality 夹具的 IR blocks |
 
-D1 17:00–18:00 评审时逐行过。**任何一行未勾选，次日不得扩展 Agent 代码。**
+**A 栏含义**：A 已在本方实现并对该接口的代码侧负责，依据是 `eafb5cb` 中的实现与测试；
+勾选不等于双签，B 栏为空即接口尚未冻结。I5 的 A 栏保持空白，因为"run 内复用 Codex 实例 +
+退避交给 SDK"两条尚未落地（G1-B05），不勾选比假勾选更可信。
+
+评审时逐行过。**任何一行 B 栏未勾选，该接口不得视为冻结，B 的资产变更也不得以"已按冻结契约"申报。**
 
 ---
 

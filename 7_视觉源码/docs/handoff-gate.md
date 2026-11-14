@@ -257,7 +257,7 @@ verify: FAIL; failed=clean,pytest
 | G1-B05 Codex 生命周期与退避 | **未修，另卡** | `writer.py` / `recognize.py` 仍是每次 `get_provider` + `generate_and_close`；退避仍是 `time.sleep`。不影响 B 并入（B 不触 SDK），列为 A 后续卡 |
 | G1-B06 Manifest 汇总 | **已修** | `pipeline/manifest.py` 新增 `asset_digests` / `code_provenance` / `dependency_versions` / `cache_key` / `call_counts`，`_read_manifest` 首次创建时 `enrich_manifest`。新 run 的 `assets.prompts/skills/schemas`、`code.git_commit`+`files`、`deps`、`calls`、`cache.key` 均非空，`tests/test_engineering_stages.py` 断言三组哈希可复算 |
 | G1-B07 夹具缺失语义 | **已修** | `tests/test_engineering_fixtures.py` 改为 `pytest.skip` 并说明缺失项；`tools/verify.py` 新增 `quality_fixtures` 门禁（缺失或 `expect_codes` 为空则 FAIL） |
-| G1-B08 真实链路 | **部分达成，断点已定位到 B 资产** | 真实 provider（`api.mixtk.com`，`gpt-6.1-sol`）下：`normalize` status=ok、issues 为空；`evidence` 首次因 `page_number [1,1]` 被 `uniqueItems` 拒绝，修正 schema 后 status=ok、issues 为空；`write` 精确失败于 `Required asset is missing: prompts/translate.md`、`ASSET_MISSING`、退出码 8。见下方命令输出 |
+| G1-B08 真实链路 | **已跑通至 final.md，仅 translate 为临时替身** | 真实 provider（`api.mixtk.com`，`gpt-6.1-sol`）下：`normalize` ok → `evidence` ok（23 条事实，`material_id=MED-04`）→ `write` ok（3531 汉字）→ `validate` `valid=true`、`han_chars=3048`、`citations=64`、`unreferenced_evidence=0`、`skipped=[]`、`issues=0` → `repair` 零轮发布，`final.md` 已产出。`translate.md` 使用 `result/runs/REAL-CHAIN/_probe_prompts/` 下的临时替身，**不是 B 的资产、未进入 `prompts/`、未入库**；B 交付真实文件后须复跑确认。附带的 A 侧 bug：evidence 阶段原未把 `material_id` 传入 payload，模型只能输出 `unknown`，已在 `stages/evidence.py` 修正并加快速失败断言 |
 | G1-B09 未双签 | **仍阻断（B 侧）** | A 侧可勾选行已按证据补登，B 侧保持空白；不代签 |
 | G1-B10 D2/D3 发布证明 | **仍缺** | 依赖 B08 完成后才能产出四份 `final.md`、ZIP 读回与干净环境演示；`docs/four-material-run.md`、`docs/clean-env-demo.md` 仍不存在 |
 | G1-B11 环境与干净工作区 | **已修** | 四条命令改用 `venv/Scripts/python.exe`（`openai_codex` 可导入）；`verify.py` 新增 `interpreter` 诊断字段（executable / version / sdk_importable），避免"用错解释器"被误读为代码缺陷；本轮改动提交后重跑 |
@@ -276,10 +276,30 @@ verify: FAIL; failed=clean,pytest
 # evidence 第二次（evidence schema 1.0.2 移除 uniqueItems 后）
 {"stage": "evidence", "status": "ok", "issues": []}
 
-# write（B 资产缺失时的精确失败点）
+# write（B 资产缺失时的精确失败点，修复前）
 {"error": "AssetMissing", "code": "ASSET_MISSING",
  "message": "Required asset is missing: prompts/translate.md", "exit_code": 8}
+
+# 用 result/ 下的临时 translate 替身继续（不是 prompts/ 资产）
+{"stage": "write", "status": "ok", "draft_han": 3531, "first_line": "<!-- material_id: MED-04 -->"}
+
+# 校验与发布
+{"valid": true, "han": 3048, "citations": 64, "codes": [], "errors": []}
+{"repair": "ok", "final": true}
+validation.json: {"valid": true,
+ "stats": {"han_chars": 3048, "citations": 64, "evidence_count": 1, "unreferenced_evidence": 0},
+ "skipped": [], "issues": 0}
 ```
+
+跑通目录：`result/runs/REAL-CHAIN/aa881b17a88241c48247f022895997c4/`（含 `recognition.json`、
+`document_ir.json`、`evidence.json`、`draft_en.md`、`draft.md`、`validation.json`、`final.md`、
+`manifest.json`）。其中 `recognition.json` 沿用 2026-11-14 15:11 的真实识别产物
+`37cb0cdccd694eb5b32148c6f3646580`，`normalize` 之后的四段均为本轮真实调用。
+
+同时修正一处 A 侧 bug：`stages/evidence.py` 原先把 `{"document_ir": ...}` 作为唯一 payload，
+模型无从得知材料编号，只能输出 `material_id: "unknown"`，随后在 `write` 后被
+`MATERIAL_MISMATCH` 拦下。现改为传入 `material_id` 并在落盘前断言与 `ctx.material_id` 相等，
+不一致立即 `MATERIAL_MISMATCH` 失败（`tests/test_engineering_stages.py` 有对应用例）。
 
 上述 `page_number [1,1]` 是本次唯一一处**由真实模型暴露、桩环境永远无法暴露**的契约缺陷：
 `uniqueItems: true` 与该字段自述的"与 `block_id` 按索引对应"互相矛盾。修正已记入 I3 变更记录，
@@ -287,13 +307,17 @@ verify: FAIL; failed=clean,pytest
 
 ### 二轮判定
 
-**可交付给 B，不可作为比赛终稿交付。**
+**可交付给 B；比赛终稿还差三项 B 侧动作与一项 A 侧另卡。**
 
 - 可交付给 B：`skills/` 与 `prompts/` 的加载、哈希、版本、失败语义已全部就位；B 改一次 SKILL.md，
   新 run 的 `manifest.assets.skills` 与 `model_calls[].skill_version` 会同时变化，可逐项复算。
-- 不可作为终稿：`translate.md` 未交（B01）、§12 未双签（B09）、四份 final/打包/干净环境未产出（B10）、
-  Codex 生命周期未按 I5 复用（B05）。
+  全链路已用真实 provider 跑到 `final.md`，`valid=true`、零 issue。
+- 仍差的三项 B 侧动作：① 交付 `prompts/translate.md`（当前用临时替身跑通，未入库）；
+  ② `skills/pdf-vision/SKILL.md` 的 frontmatter 增加 `version: 1.1.0`；③ §12 的 B 栏逐行勾选。
+- 仍差的一项 A 侧另卡：`I5` 的 run 内 Codex 实例复用与 SDK 退避（G1-B05），不影响 B 并入。
+- 比赛终稿另需：四份材料各自独立 run（G1-B10）、`submission.zip` 读回、干净环境演示。
 
-B 侧最小动作两项：`prompts/translate.md`（首行 `<!-- version: x.y.z -->`，输入 `draft_en`，输出中文正文）
-与 `skills/pdf-vision/SKILL.md` 的 frontmatter 增加 `version: 1.1.0`。两项到位后，`check_assets.py`
-的 `missing` 与 `version_issues` 应同时为空，`write` 阶段可继续向下执行。
+B 侧最小动作两项（可直接照做）：`prompts/translate.md` 首行 `<!-- version: x.y.z -->`，
+输入 `draft_en`、输出中文正文、保留首行 `<!-- material_id: ... -->` 注释与来源节格式；
+`skills/pdf-vision/SKILL.md` 的 frontmatter 增加 `version: 1.1.0`。两项到位后，
+`check_assets.py` 的 `missing` 与 `version_issues` 应同时为空。

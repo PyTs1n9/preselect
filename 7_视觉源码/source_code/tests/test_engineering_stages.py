@@ -90,6 +90,10 @@ class FakeProvider:
         payload = self.factory.outputs[request.stage]
         if callable(payload):
             payload = payload(request)
+        if request.stage == "evidence" and isinstance(payload, dict):
+            # A real model echoes the material_id it was given; the fixture's
+            # own id belongs to a different run directory.
+            payload = {**payload, "material_id": request.payload["material_id"]}
         if isinstance(payload, Exception):
             raise payload
         return ModelResult(
@@ -380,10 +384,16 @@ def test_run_evidence_uses_text_recognition_and_independent_providers(ctx, fake)
                     for index in range(1, 6)]}
                 for number in (1, 2)]}
         else:
-            assert written == fake.outputs[output.name]
+            expected = fake.outputs[output.name]
+            if output.name == "evidence":
+                expected = {**expected, "material_id": ctx.material_id}
+            assert written == expected
     for request, input_name in zip(fake.requests, ("recognition", "document_ir")):
         assert request.images is None and request.skill is None
-        assert request.payload == {input_name: _json(ctx.run_dir / f"{input_name}.json")}
+        expected = {input_name: _json(ctx.run_dir / f"{input_name}.json")}
+        if request.stage == "evidence":
+            expected["material_id"] = ctx.material_id
+        assert request.payload == expected
         assert request.json_schema == load_schema(ARTIFACTS[request.stage])
         assert request.prompt_text == (STUB_PROMPTS / f"{request.stage}.md").read_text(encoding="utf-8")
     manifest = _json(ctx.run_dir / "manifest.json")
@@ -425,7 +435,10 @@ def test_text_stage_reads_disk_each_time_and_missing_input_fails(ctx, fake, modu
         changed["document_id"] = "changed-on-disk"
     path.write_text(json.dumps(changed, ensure_ascii=False), encoding="utf-8")
     module.run(ctx, {})
-    assert fake.requests[-1].payload == {path.stem: changed}
+    expected = {path.stem: changed}
+    if module is evidence:
+        expected["material_id"] = ctx.material_id
+    assert fake.requests[-1].payload == expected
     assert fake.requests[-1].payload != fake.requests[-2].payload
     path.unlink()
     count = len(fake.requests)
@@ -599,3 +612,49 @@ def test_corrupt_manifest_fails_without_replacing_existing_evidence(ctx, fake):
     assert exit_code_for(caught.value) == 7
     assert path.read_bytes() == b"{invalid-manifest"
     assert not fake.providers
+
+
+def test_evidence_rejects_material_id_that_differs_from_the_run(ctx, fake, monkeypatch):
+    """A wrong material_id must fail at the stage, not surface later as a
+    cross-material mismatch during validation."""
+    _write_input(ctx, "evidence")
+
+    class WrongMaterialProvider:
+        def generate(self, request):
+            return ModelResult(text="{}", parsed={"material_id": "some-other-material", "facts": []},
+                               raw={}, usage={}, truncated=False, latency_ms=0.0, attempts=1,
+                               request_hash="0" * 64, model="offline-engineering-model",
+                               turn_status="completed")
+
+        def close(self):
+            return None
+
+    monkeypatch.setattr(evidence, "get_provider", lambda *a, **k: WrongMaterialProvider())
+    with pytest.raises(PipelineError) as caught:
+        evidence.run(ctx, {})
+
+    assert caught.value.code == "MATERIAL_MISMATCH"
+    assert not (ctx.run_dir / "evidence.json").is_file()
+
+
+def test_evidence_rejects_material_id_that_differs_from_the_run(ctx, fake, monkeypatch):
+    """A wrong material_id must fail at the stage, not surface later as a
+    cross-material mismatch during validation."""
+    _write_input(ctx, "evidence")
+
+    class WrongMaterialProvider:
+        def generate(self, request):
+            return ModelResult(text="{}", parsed={"material_id": "some-other-material", "facts": []},
+                               raw={}, usage={}, truncated=False, latency_ms=0.0, attempts=1,
+                               request_hash="0" * 64, model="offline-engineering-model",
+                               turn_status="completed")
+
+        def close(self):
+            return None
+
+    monkeypatch.setattr(evidence, "get_provider", lambda *a, **k: WrongMaterialProvider())
+    with pytest.raises(PipelineError) as caught:
+        evidence.run(ctx, {})
+
+    assert caught.value.code == "MATERIAL_MISMATCH"
+    assert not (ctx.run_dir / "evidence.json").is_file()
