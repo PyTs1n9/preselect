@@ -11,7 +11,7 @@ from pathlib import Path
 import pytest
 from pypdf import PdfWriter
 
-import main
+from tools import demo
 from pipeline.codex_adapter import CodexAdapter
 from pipeline.contracts import ModelRequest
 from pipeline.errors import AssetMissing, ConfigError, PipelineError, exit_code_for
@@ -58,8 +58,8 @@ def test_demo_runs_real_stages_without_codex_or_network(tmp_path, monkeypatch, c
         writer.add_blank_page(width=72, height=72)
     writer.write(pdf)
 
-    code = main.main(["demo", "--pdf", str(pdf), "--material-id", "DEMO-CUSTOM",
-                      "--output", str(tmp_path / "runs")])
+    code = demo.main(["--pdf", str(pdf), "--material-id", "DEMO-CUSTOM",
+                      "--output", str(tmp_path / "demo")])
 
     captured = capsys.readouterr()
     payload = json.loads(captured.out)
@@ -72,7 +72,7 @@ def test_demo_runs_real_stages_without_codex_or_network(tmp_path, monkeypatch, c
     assert [stage["name"] for stage in payload["stages"]] == STAGES
     assert all(stage["status"] == "ok" for stage in payload["stages"])
     run = Path(payload["run_dir"])
-    assert run == tmp_path / "runs" / "DEMO-CUSTOM" / payload["run_id"]
+    assert run == tmp_path / "demo" / "DEMO-CUSTOM" / payload["run_id"]
     validation = _json(run / "validation.json")
     assert validation["valid"] is True and validation["checks"]["skipped"] == []
     assert validation["stats"]["han_chars"] == payload["han_chars"]

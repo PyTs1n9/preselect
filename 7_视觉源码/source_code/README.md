@@ -66,6 +66,21 @@ python main.py package --materials MED-04 --out dist/submission.zip
 如使用 `run --output` 自定义运行根目录，应让 `paths.result_dir` 指向同一目录，
 供 `validate` 和 `package` 查找。
 
+## 本地回放（非生产）
+
+本地回放使用固定模型输出验证完整流水线，不代表 PDF 识别质量。它通过独立工具
+运行，不属于 `main.py` 的生产子命令；必须显式提供 PDF 路径：
+
+```text
+python tools/demo.py --pdf <path>
+```
+
+默认输出为 `result/demo/DEMO-01/<run_id>/`，可用 `--material-id` 和 `--output`
+指定回放材料编号与输出目录。manifest 中记录 `vision.provider=replay`；
+`package` 会以退出码 7 拒绝回放产物，提示“回放产物不得打包”。
+
+目录约定：result/runs 只存放真实模型运行，回放产物存放在 `result/demo/`。
+
 ## 运行目录布局
 
 默认运行目录为 `result/runs/<material_id>/<run_id>/`：
