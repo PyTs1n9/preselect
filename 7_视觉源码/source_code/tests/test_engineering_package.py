@@ -339,3 +339,80 @@ def test_select_run_failure_message_names_the_run_directory(tmp_path):
     with pytest.raises(PackageFailure) as caught:
         select_run(root, "M1")
     assert "M1" in str(caught.value) and "bad-run" in str(caught.value)
+
+
+
+def test_package_replay_provider_fails_with_exit_seven(tmp_path, monkeypatch, capsys):
+    root = tmp_path / "runs"
+    run = _make_run(root, "run_ok")
+    manifest_path = run / "manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["config"] = {"vision.provider": {"value": "replay", "source": "cli"}}
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+    monkeypatch.setattr(main, "load_settings", lambda: _settings(root))
+
+    code = main.main(["package", "--materials", "run_ok", "--out", str(tmp_path / "gate-check.zip")])
+
+    payload = json.loads(capsys.readouterr().out)
+    assert code == 7 and payload["error"]["code"] == "IO_FAILURE"
+    assert payload["error"]["message"] == "回放产物不得打包"
+    _assert_no_outputs(tmp_path)
+
+
+def test_same_run_passes_original_gates_after_only_provider_changes(tmp_path):
+    root = tmp_path / "runs"
+    run = _make_run(root, "run_ok")
+    manifest_path = run / "manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["config"] = {"vision.provider": {"value": "replay", "source": "cli"}}
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+    settings = _settings(root)
+    output = tmp_path / "gate-check.zip"
+
+    with pytest.raises(PackageFailure, match="回放产物不得打包") as caught:
+        build_package(["run_ok"], output, settings)
+    assert exit_code_for(caught.value) == 7
+    _assert_no_outputs(tmp_path)
+
+    other_bytes = {path.relative_to(run): path.read_bytes() for path in run.rglob("*")
+                   if path.is_file() and path != manifest_path}
+    manifest["config"]["vision.provider"]["value"] = "openai_codex"
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+    assert all((run / name).read_bytes() == value for name, value in other_bytes.items())
+
+    report = build_package(["run_ok"], output, settings)
+
+    assert report.verified is True
+    assert output.is_file()
+    with ZipFile(output) as archive:
+        packed = json.loads(archive.read("materials/run_ok/manifest.json"))
+    assert packed == manifest
+
+
+@pytest.mark.parametrize("manifest_patch", [
+    {},
+    {"config": None},
+    {"config": []},
+    {"config": {}},
+    {"config": {"vision.provider": None}},
+    {"config": {"vision.provider": []}},
+    {"config": {"vision.provider": {}}},
+    {"config": {"vision.provider": {"value": None}}},
+    {"config": {"vision.provider": {"value": False}}},
+    {"config": {"vision.provider": {"value": {}}}},
+    {"config": {"vision.provider": {"value": ""}}},
+    {"config": {"vision.provider": {"value": " "}}},
+])
+def test_package_missing_or_malformed_provider_fails_closed(tmp_path, manifest_patch):
+    root = tmp_path / "runs"
+    run = _make_run(root, "run_ok")
+    manifest_path = run / "manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest.update(manifest_patch)
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+    with pytest.raises(PackageFailure, match="vision.provider") as caught:
+        build_package(["run_ok"], tmp_path / "gate-check.zip", _settings(root))
+
+    assert exit_code_for(caught.value) == 7
+    _assert_no_outputs(tmp_path)

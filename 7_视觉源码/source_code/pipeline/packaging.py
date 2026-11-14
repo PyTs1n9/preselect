@@ -360,6 +360,13 @@ def build_package(materials: list[str], out_path: Path, settings: Settings) -> P
         except (OSError, UnicodeError, json.JSONDecodeError):
             raise PackageFailure(f"Unable to read manifest for {material_id}") from None
         evaluate_gate(material_id, manifest, report)
+        config = manifest.get("config") if isinstance(manifest, dict) else None
+        provider_entry = config.get("vision.provider") if isinstance(config, dict) else None
+        provider = provider_entry.get("value") if isinstance(provider_entry, dict) else None
+        if not isinstance(provider, str) or not provider.strip():
+            raise PackageFailure(f"Manifest vision.provider is missing or invalid for {material_id}")
+        if provider == "replay":
+            raise PackageFailure("回放产物不得打包")
         runs[material_id] = run_dir
 
     entries = collect_entries(runs)
