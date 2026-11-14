@@ -23,9 +23,9 @@ REQUIRES = []
 PRODUCES = ["recognition", "page_text", "page_plan"]
 
 # Measured against MED-04: one dense page is ~4.8k characters of verbatim text
-# and takes ~100s; a two-page turn already exceeded a 300s cap. One page per
-# turn is the only configuration proven to finish, at the cost of more calls.
-BATCH_PAGES = 1
+# and takes ~100s; a two-page turn already exceeded a 300s cap. Each page
+# requiring vision gets one call, the only configuration proven to finish,
+# at the cost of more calls.
 
 _VISUAL_PROMPTS = {"scan_page": "vision", "table_page": "table",
                    "formula_page": "formula", "text_page_with_figure": "figure"}
@@ -171,7 +171,8 @@ def _visual_text(name: str, payload: dict) -> str:
 def run(ctx: RunContext, inputs: dict[str, Path]) -> StageResult:
     with stage_record(ctx, STAGE_NAME) as state:
         source = ctx.artifacts["source_pdf"]
-        info = load_pdf(source, run_dir=ctx.run_dir)
+        info = load_pdf(source, run_dir=ctx.run_dir, dpi=ctx.settings.vision.dpi,
+                        settings=ctx.settings)
         write_text_atomic(ctx.run_dir / "input" / "source.pdf.sha256", info.sha256 + "\n")
         record_input(ctx, source, info)
         images = sorted((ctx.run_dir / "input").glob("page_*.png"))

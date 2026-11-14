@@ -349,7 +349,7 @@ class CodexAdapter:
                     turn_status=status,
                     error_message=error_message,
                 )
-            except (InvalidModelOutput, ModelRefused, TruncatedResponse, ConfigError, PipelineError):
+            except PipelineError:
                 raise
             except Exception as exc:  # noqa: BLE001 - SDK raises heterogeneous types
                 last_error = exc

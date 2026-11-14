@@ -30,7 +30,7 @@ def test_render_targets_explicit_run_dir(tmp_path):
     pdf = _blank_pdf(tmp_path / "paper.pdf")
     run_dir = tmp_path / "run"
 
-    info = load_pdf(pdf, run_dir=run_dir)
+    info = load_pdf(pdf, run_dir=run_dir, dpi=200)
 
     expected = run_dir / "input" / "page_0001.png"
     assert info.page_count == 1
@@ -44,7 +44,7 @@ def test_environment_variable_is_not_a_run_dir_channel(tmp_path, monkeypatch):
     pdf = _blank_pdf(tmp_path / "paper.pdf")
     run_dir = tmp_path / "run"
 
-    info = load_pdf(pdf, run_dir=run_dir)
+    info = load_pdf(pdf, run_dir=run_dir, dpi=200)
 
     assert info.pages[0].render_path == run_dir / "input" / "page_0001.png"
     assert not (tmp_path / "elsewhere").exists()

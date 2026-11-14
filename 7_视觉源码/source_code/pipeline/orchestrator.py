@@ -1,4 +1,7 @@
-"""Registry-driven stage execution."""
+"""Registry-driven stage execution.
+
+validate/package 是 CLI 子命令，不是注册阶段。
+"""
 
 from __future__ import annotations
 
@@ -22,8 +25,6 @@ class Stage(str, Enum):
     normalize = "normalize"
     evidence = "evidence"
     write = "write"
-    validate = "validate"
-    package = "package"
 
 
 @dataclass(frozen=True)

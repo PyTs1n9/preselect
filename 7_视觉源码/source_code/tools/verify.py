@@ -98,7 +98,7 @@ def _pytest() -> dict:
 def _demo() -> dict:
     pdf = Path("../materials/ges_docs_MED-04.pdf")
     result = _run(
-        [sys.executable, "main.py", "demo", "--pdf", str(pdf)],
+        [sys.executable, "tools/demo.py", "--pdf", str(pdf)],
         SOURCE_ROOT,
     )
     payload = None
@@ -198,7 +198,7 @@ def main() -> int:
     ok = all(passed for _, passed in checks)
     failed = [name for name, passed in checks if not passed]
     print(f"verify: {'PASS' if ok else 'FAIL'}; failed={','.join(failed) if failed else 'none'}")
-    print(json.dumps(report, ensure_ascii=False, sort_keys=True))
+    print(json.dumps(report, ensure_ascii=True, sort_keys=True))
     return 0 if ok else 1
 
 

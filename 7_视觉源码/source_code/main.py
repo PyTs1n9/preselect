@@ -6,12 +6,10 @@ import argparse
 import json
 import sys
 from pathlib import Path
-from uuid import uuid4
 
-from pipeline.contracts import RunContext
 from pipeline.errors import IoFailure, PipelineError, exit_code_for
-from pipeline.orchestrator import run_stages
 from pipeline.packaging import build_package
+from pipeline.runner import execute_run
 from pipeline.settings import load_settings
 from pipeline.validate import validate_run
 
@@ -28,12 +26,6 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--output", type=Path, default=Path("result/runs"))
     run.add_argument("--material-id", default=None)
     run.add_argument("--stage", default="all")
-    run.add_argument("--resume", action="store_true",
-                     help="skip stages whose manifest record and artifacts are intact")
-    demo = subs.add_parser("demo", parents=[common], help="exercise all stages with local replay outputs")
-    demo.add_argument("--pdf", type=Path, default=Path("../materials/ges_docs_MED-04.pdf"))
-    demo.add_argument("--material-id", default="DEMO-01")
-    demo.add_argument("--output", type=Path, default=Path("result/runs"))
     doctor = subs.add_parser("doctor", parents=[common], help="show resolved configuration")
     doctor.add_argument("--offline", action="store_true")
     validate = subs.add_parser("validate", parents=[common], help="validate an existing run")
@@ -53,38 +45,7 @@ def _run(args: argparse.Namespace) -> dict:
         # mistyped run directory is not discovered after the fact.
         print(f"warning: --material-id omitted; derived {material_id!r} from the PDF file name",
               file=sys.stderr)
-    return _execute_run(args.pdf, material_id, args.output, settings, args.stage,
-                        resume=getattr(args, "resume", False))
-
-
-def _execute_run(pdf: Path, material_id: str, output: Path, settings, stage: str,
-                 resume: bool = False) -> dict:
-    run_id = uuid4().hex
-    run_dir = output / material_id / run_id
-    # I2 requires the layout even when a stage fails early; stages only fill it.
-    for name in ("input", "raw", "logs"):
-        (run_dir / name).mkdir(parents=True, exist_ok=True)
-    # The source PDF never enters the run directory, so it is passed to stages
-    # as an artifact path instead of being copied.
-    context = RunContext(run_id, material_id, run_dir, settings, {"source_pdf": pdf})
-    results = run_stages(context, stage, resume=resume)
-    return {"run_id": run_id, "run_dir": str(run_dir), "stages": [result.__dict__ for result in results]}
-
-
-def _demo(args: argparse.Namespace) -> tuple[dict, int]:
-    print("模型输出为回放桩，仅验证链路，不代表识别质量", file=sys.stderr)
-    fixtures = Path(__file__).resolve().parent / "tests" / "fixtures" / "demo"
-    settings = load_settings(cli_overrides={
-        "vision.provider": "replay",
-        "paths.prompts_dir": fixtures / "prompts",
-        "paths.skills_dir": fixtures / "skills",
-        "paths.fixtures_dir": fixtures / "model_outputs",
-    }, require_secret=False)
-    result = _execute_run(args.pdf, args.material_id, args.output, settings, "all")
-    report = validate_run(Path(result["run_dir"]), settings)
-    result.update(valid=report.valid, han_chars=report.stats["han_chars"],
-                  issues=[issue.to_dict() for issue in report.issues])
-    return result, 0 if report.valid else 4
+    return execute_run(args.pdf, material_id, args.output, settings, args.stage)
 
 
 def _doctor(args: argparse.Namespace) -> dict:
@@ -131,7 +92,7 @@ def _package(args: argparse.Namespace) -> dict:
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
-        handlers = {"run": _run, "demo": _demo, "doctor": _doctor, "validate": _validate, "package": _package}
+        handlers = {"run": _run, "doctor": _doctor, "validate": _validate, "package": _package}
         result = handlers[args.command](args)
         code = 0
         if isinstance(result, tuple):
