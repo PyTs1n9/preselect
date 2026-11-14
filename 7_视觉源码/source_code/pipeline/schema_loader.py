@@ -23,7 +23,7 @@ SUPPORTED_VERSIONS: dict[str, frozenset[str]] = {
     # B1 lands the first declared version of both model-output schemas.
     "recognition": frozenset({"1.0.0"}),
     "document_ir": frozenset({"1.0.0"}),
-    "evidence": frozenset({"1.0.1"}),
+    "evidence": frozenset({"1.0.2"}),
     "table": frozenset({"1.0.0"}),
     "figure": frozenset({"1.0.0"}),
     "formula": frozenset({"1.0.0"}),

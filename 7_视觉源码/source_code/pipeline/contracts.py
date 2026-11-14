@@ -51,6 +51,7 @@ class SkillAsset:
     text: str
     sha256: str
     path: Path
+    version: str | None = None
 
 
 @dataclass(frozen=True)

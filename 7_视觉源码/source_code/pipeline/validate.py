@@ -375,6 +375,11 @@ def _check_consistency(text: str, evidence: dict, name: str) -> tuple[list[Issue
         if fact["fact_id"] in indexed:
             return [_issue(Code.SCHEMA_INVALID, f"evidence.json#/facts/{index}",
                            "Evidence fact identifiers must be unique")], 0, 0
+        # The two locator arrays are read position by position, so a mismatch is
+        # a broken citation even when both arrays are individually valid.
+        if len(fact["page_number"]) != len(fact["block_id"]):
+            issues.append(_issue(Code.SCHEMA_INVALID, f"evidence.json#/facts/{index}",
+                                 "page_number and block_id must have the same length"))
         indexed[fact["fact_id"]] = fact
     numeric: dict[str, dict[Decimal, set[str | None]] | None] = {}
     for index, fact in enumerate(facts):
@@ -536,17 +541,42 @@ def _write_report(run_dir: Path, report: ValidationReport) -> None:
                 raise IoFailure("Validation temporary file could not be removed") from None
 
 
+def _check_block_locators(evidence: dict, document_ir: dict) -> list[Issue]:
+    """Every evidence block_id must exist in the IR it claims to point at.
+
+    Without this the citation chain stops at "is a non-empty string": a fact
+    could cite B999 and still look traceable.
+    """
+    blocks = document_ir.get("blocks")
+    if not isinstance(blocks, list):
+        return [_issue(Code.SCHEMA_INVALID, "document_ir.json#/blocks",
+                       "Document IR must expose a blocks array")]
+    known = {block.get("block_id") for block in blocks if isinstance(block, dict)}
+    issues: list[Issue] = []
+    for index, fact in enumerate(evidence["facts"]):
+        for block_id in fact["block_id"]:
+            if block_id not in known:
+                issues.append(_issue(Code.SCHEMA_INVALID,
+                                     f"evidence.json#/facts/{index}/block_id",
+                                     "Evidence block_id must exist in document_ir.blocks"))
+    return issues
+
+
 def validate_run(run_dir: Path, settings: Settings) -> ValidationReport:
     """Run all implemented checks; missing inputs fail instead of being skipped."""
     issues: list[Issue] = []
     evidence_count = 0
     evidence = None
+    document_ir = None
     for name in ("recognition", "document_ir", "evidence"):
         payload, found = _read_artifact(run_dir, name)
         issues.extend(found)
-        if name == "evidence" and isinstance(payload, dict) and not any(i.severity == "error" for i in found):
-            evidence_count = 1
-            evidence = payload
+        if isinstance(payload, dict) and not any(i.severity == "error" for i in found):
+            if name == "evidence":
+                evidence_count = 1
+                evidence = payload
+            elif name == "document_ir":
+                document_ir = payload
     han_chars = 0
     citations = 0
     unreferenced = 0
@@ -576,6 +606,8 @@ def validate_run(run_dir: Path, settings: Settings) -> ValidationReport:
     except OSError:
         issues.append(_issue(Code.ASSET_MISSING, name, "Markdown artifact cannot be read"))
     issues.extend(_check_material(run_dir, material_text, evidence, name))
+    if evidence is not None and document_ir is not None:
+        issues.extend(_check_block_locators(evidence, document_ir))
     if markdown is not None and evidence is not None:
         found, citations, unreferenced = _check_consistency(markdown, evidence, name)
         issues.extend(found)

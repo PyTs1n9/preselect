@@ -208,7 +208,9 @@ def _make_run(run_dir):
         "document_ir.json": {
             "document_id": "engineering",
             "source": {"path_name": None, "page_count": None, "sha256": None},
-            "pages": [], "blocks": [],
+            "pages": [],
+            "blocks": [{"block_id": "B001", "page_number": 1,
+                        "text": "工程文本", "region": None}],
         },
         "evidence.json": {
             "material_id": "engineering",

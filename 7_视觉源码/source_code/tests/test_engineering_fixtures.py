@@ -25,14 +25,20 @@ def _hashes(directory: Path) -> dict[str, str]:
 
 
 def test_quality_fixture_inventory_is_complete():
-    assert QUALITY.is_dir(), "B quality fixture directory is missing"
-    assert REQUIRED_CASES <= set(CASES), "A required quality fixture is missing"
+    # I10: a missing B-side fixture is reported as skipped, never as a pass and
+    # never as an A-side failure. verify.py turns the skip into a red gate.
+    if not QUALITY.is_dir():
+        pytest.skip("B quality fixture directory is missing")
+    missing = sorted(REQUIRED_CASES - set(CASES))
+    if missing:
+        pytest.skip(f"B quality fixtures missing: {', '.join(missing)}")
 
 
 @pytest.mark.parametrize("case_name", CASES or ["missing-quality-fixtures"])
 def test_quality_fixture_contract(case_name, tmp_path):
     source = QUALITY / case_name
-    assert source.is_dir(), "Quality fixture is missing"
+    if not source.is_dir():
+        pytest.skip(f"quality fixture is missing: {case_name}")
     before = _hashes(source)
     expectation = json.loads((source / "expect.json").read_text(encoding="utf-8"))
     assert expectation["case"] == case_name

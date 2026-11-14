@@ -12,7 +12,8 @@ from urllib.parse import urlsplit
 
 from ..contracts import ModelRequest, ModelResult, PdfInfo, PromptAsset, RunContext
 from ..errors import AssetMissing, Code, IoFailure, Issue, PipelineError, redact
-from ..manifest import create_run_manifest, utc_now, write_manifest
+from ..manifest import (cache_key, call_counts, create_run_manifest,
+                        enrich_manifest, utc_now, write_manifest)
 from ..schema_loader import validate_instance
 from ..vision_provider import VisionProvider
 
@@ -77,7 +78,7 @@ def _read_manifest(ctx: RunContext) -> dict:
     try:
         manifest = json.loads(path.read_text(encoding="utf-8"))
     except FileNotFoundError:
-        return create_run_manifest(ctx.run_id, ctx.material_id, ctx.settings)
+        return enrich_manifest(create_run_manifest(ctx.run_id, ctx.material_id, ctx.settings), ctx.settings)
     except (OSError, UnicodeError, json.JSONDecodeError):
         raise IoFailure("Unable to read manifest.json") from None
     if (not isinstance(manifest, dict) or not isinstance(manifest.get("stages"), list)
@@ -122,6 +123,7 @@ def record_stage(ctx, name, status, started_at, ended_at, duration_ms, artifacts
             break
     else:
         manifest["stages"].append(entry)
+    manifest["calls"] = call_counts(manifest)
     _write_manifest(ctx, manifest)
 
 
@@ -129,6 +131,8 @@ def record_input(ctx: RunContext, source: Path, info: PdfInfo) -> None:
     manifest = _read_manifest(ctx)
     manifest["input"] = {"path_name": source.name, "sha256": info.sha256,
                          "page_count": info.page_count}
+    # The cache key needs the input digest, which only exists at this point.
+    manifest["cache"]["key"] = cache_key(manifest)
     _write_manifest(ctx, manifest)
 
 

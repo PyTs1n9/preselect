@@ -37,10 +37,34 @@ def load_prompt(name: str, base_dir: Path) -> PromptAsset:
     return PromptAsset(text, digest, path, version.group(1) if version else None)
 
 
+_FRONTMATTER_VERSION = re.compile(r"^\s*(?:metadata\.)?version:\s*['\"]?([^'\"\s]+)['\"]?\s*$", re.MULTILINE)
+
+
+def _skill_version(text: str) -> str | None:
+    """Read the version from either declaration form I4 allows.
+
+    A prompt starts with an HTML comment. A skill must start with YAML
+    frontmatter to satisfy the Agent Skills spec, so the version lives inside
+    that block instead. Both are accepted; neither is invented.
+    """
+    lines = text.splitlines()
+    if lines and lines[0].strip() == "---":
+        for index, line in enumerate(lines[1:], start=1):
+            if line.strip() == "---":
+                header = "\n".join(lines[1:index])
+                match = _FRONTMATTER_VERSION.search(header)
+                return match.group(1) if match else None
+        return None
+    first = re.fullmatch(r"<!--\s*version:\s*(\S+)\s*-->", lines[0]) if lines else None
+    return first.group(1) if first else None
+
+
 def load_skill(path: Path) -> SkillAsset:
     try:
         path = Path(path).resolve()
     except OSError:
         raise IoFailure("Unable to resolve skill path") from None
     text, digest = _read_asset(path)
-    return SkillAsset(text, digest, path)
+    if not text.strip():
+        raise AssetEmpty(f"Required skill is empty: {path.parent.name}/{path.name}")
+    return SkillAsset(text, digest, path, _skill_version(text))

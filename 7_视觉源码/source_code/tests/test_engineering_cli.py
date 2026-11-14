@@ -59,9 +59,10 @@ def test_failed_report_is_still_printed_before_exit(tmp_path, monkeypatch, capsy
 def test_run_creates_i2_layout_and_passes_source_pdf(tmp_path, monkeypatch):
     captured: dict = {}
 
-    def fake_run_stages(context, stage):
+    def fake_run_stages(context, stage, resume=False):
         captured["context"] = context
         captured["stage"] = stage
+        captured["resume"] = resume
         return []
 
     monkeypatch.setattr(main, "run_stages", fake_run_stages)
@@ -78,6 +79,39 @@ def test_run_creates_i2_layout_and_passes_source_pdf(tmp_path, monkeypatch):
     assert context.run_dir == tmp_path / "runs" / "paper" / context.run_id
     for name in ("input", "raw", "logs"):
         assert (context.run_dir / name).is_dir(), f"I2 layout requires {name}/ before the first stage"
+
+
+def test_json_flag_prints_a_single_line_object(tmp_path, monkeypatch, capsys):
+    shutil.copytree(FIXTURES / "run_ok", tmp_path / "run1")
+    monkeypatch.setattr(main, "load_settings", lambda **_: _settings(tmp_path))
+
+    exit_code = main.main(["validate", "--run-id", "run1", "--json"])
+
+    out = capsys.readouterr().out
+    assert exit_code == 0
+    assert out.count("\n") == 1, "I1 requires one JSON object, not a pretty-printed block"
+    json.loads(out)
+
+
+def test_default_material_id_is_derived_and_announced(tmp_path, monkeypatch, capsys):
+    captured: dict = {}
+
+    def fake_run_stages(context, stage, resume=False):
+        captured["material_id"] = context.material_id
+        return []
+
+    monkeypatch.setattr(main, "run_stages", fake_run_stages)
+    monkeypatch.setattr(main, "load_settings", lambda **_: _settings(tmp_path))
+    pdf = tmp_path / "paper.pdf"
+    pdf.write_bytes(b"%PDF-1.4\n")
+
+    exit_code = main.main(["run", str(pdf), "--output", str(tmp_path / "runs")])
+
+    streams = capsys.readouterr()
+    assert exit_code == 0
+    assert captured["material_id"] == "paper"
+    assert "derived" in streams.err and "paper" in streams.err
+    json.loads(streams.out)
 
 
 def test_auth_missing_is_a_run_failure_with_exit_two():

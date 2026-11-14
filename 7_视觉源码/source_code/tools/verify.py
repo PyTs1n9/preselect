@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import importlib.util
 import json
+import platform
 import re
 import subprocess
 import sys
@@ -14,6 +16,9 @@ SOURCE_ROOT = Path(__file__).resolve().parents[1]
 PROJECT_ROOT = SOURCE_ROOT.parent
 REPO_ROOT = PROJECT_ROOT.parent
 MATERIALS = PROJECT_ROOT / "materials"
+QUALITY = SOURCE_ROOT / "fixtures" / "quality"
+REQUIRED_QUALITY_CASES = {"fake_citation", "evidence_unreferenced", "number_mismatch",
+                          "unit_missing", "material_mismatch"}
 
 
 def _run(command: list[str], cwd: Path) -> subprocess.CompletedProcess[str]:
@@ -140,21 +145,58 @@ def _materials() -> dict:
     }
 
 
+def _interpreter() -> dict:
+    """Name the interpreter that produced this report.
+
+    A run under the wrong Python reports a collection error that looks like a
+    code defect. Recording the executable and whether the SDK resolves turns
+    that into a one-line diagnosis without changing any verdict.
+    """
+    return {
+        "executable": sys.executable,
+        "version": platform.python_version(),
+        "prefix": sys.prefix,
+        "sdk_importable": importlib.util.find_spec("openai_codex") is not None,
+    }
+
+
+def _quality_fixtures() -> dict:
+    """I10: missing or malformed B fixtures turn this gate red, not green."""
+    cases = sorted(path.name for path in QUALITY.iterdir() if path.is_dir()) if QUALITY.is_dir() else []
+    missing = sorted(REQUIRED_QUALITY_CASES - set(cases))
+    invalid: list[str] = []
+    for case in cases:
+        try:
+            payload = json.loads((QUALITY / case / "expect.json").read_text(encoding="utf-8"))
+        except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+            invalid.append(f"{case}: {exc}")
+            continue
+        if not isinstance(payload.get("expect_codes"), list) or not payload["expect_codes"]:
+            invalid.append(f"{case}: expect_codes must be a non-empty list")
+    return {"ok": not missing and not invalid, "cases": cases,
+            "missing": missing, "invalid": invalid}
+
+
 def main() -> int:
     head, clean = _git_state()
     pytest = _pytest()
     demo = _demo()
     materials = _materials()
+    quality = _quality_fixtures()
     report = {
         "head": head,
         "clean": clean,
+        "interpreter": _interpreter(),
         "pytest": pytest,
         "demo": demo,
         "materials": materials,
+        "quality_fixtures": quality,
     }
-    checks = [head["ok"], clean["ok"], pytest["ok"], demo["ok"], materials["ok"]]
-    ok = all(checks)
-    failed = [name for name, passed in zip(report, checks) if not passed]
+    checks = [("head", head["ok"]), ("clean", clean["ok"]), ("pytest", pytest["ok"]),
+              ("demo", demo["ok"]), ("materials", materials["ok"]),
+              ("quality_fixtures", quality["ok"])]
+    ok = all(passed for _, passed in checks)
+    failed = [name for name, passed in checks if not passed]
     print(f"verify: {'PASS' if ok else 'FAIL'}; failed={','.join(failed) if failed else 'none'}")
     print(json.dumps(report, ensure_ascii=False, sort_keys=True))
     return 0 if ok else 1

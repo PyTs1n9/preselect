@@ -104,7 +104,7 @@ artifacts，不作为必产物。三个可选文件均为 `{"pages":[<逐页 sch
 |---|---|---|---|
 | `recognition.schema.json` | 原始识别层 | `pages`；每页含 `page_number` 与 `blocks`，每块含 `block_id`、`text`、`region`（归一化 0–1，可 null） | **1.0.0**（A 落盘，字段依 SKILL.md v1.1.0） |
 | `document_ir.schema.json` | 结构归一化层 | `document_id`、`source{path_name,page_count,sha256}`、`pages`、`blocks`（块结构同识别层） | **1.0.0**（A 落盘） |
-| `evidence.schema.json` | 事实证据层 | `material_id`、`facts`；每条事实含 `fact_id`、`core`、`page_number[]`、`block_id[]`、`quote`、`value`、`value_text`、`unit`、`region` | **1.0.1**（B 定义，A 落盘） |
+| `evidence.schema.json` | 事实证据层 | `material_id`、`facts`；每条事实含 `fact_id`、`core`、`page_number[]`、`block_id[]`、`quote`、`value`、`value_text`、`unit`、`region` | **1.0.2**（B 定义，A 落盘） |
 | `validation.schema.json` | 校验结果 | `valid`、`issues`、`checks` | **1.1.0**（A 定义，见下） |
 | `table.schema.json` | 表格页视觉输出 | `page_number`、`tables`；表含 `table_id`、`caption`、`header`、`rows`、`bbox` | **1.0.0**（B 定稿，A 原样落盘） |
 | `figure.schema.json` | 图页视觉输出 | `page_number`、`figures`；图含 `figure_id`、`caption`、`description`、`readouts`、`bbox` | **1.0.0**（B 定稿，A 原样落盘） |
@@ -114,7 +114,9 @@ artifacts，不作为必产物。三个可选文件均为 `{"pages":[<逐页 sch
 
 1. 每个 schema 必须有 `$id` 与 `schema_version` 字段，A 的加载器据此判断兼容性。
 2. 任一 schema 变更字段名、删除字段、收紧枚举，**必须同时**升 `schema_version` 并双人确认，否则 A 的加载器按 `SCHEMA_VERSION_MISMATCH` 失败。
-3. `additionalProperties` 默认 `false`（当前 4 个文件都是 `true`，冻结时需明确改为 `false`，否则拼写错误无法被发现）。
+3. `additionalProperties` 默认 `false`。七份 schema 的每个 object 均已关闭额外属性
+   （2026-11-14 由 `schema_loader` 的 strict 预检逐层校验，不合规立即 `SCHEMA_INVALID`）。
+   早期"4 个文件都是 true"的表述已作废。
 4. A 不为缺失字段提供默认值。字段缺失就是 issue。
 5. **版本门逐 schema 独立**：`schema_loader.SUPPORTED_VERSIONS` 按 schema 名登记，
    升 validation 不会波及 recognition。单一全局版本常量不成立，已移除。
@@ -136,6 +138,7 @@ artifacts，不作为必产物。三个可选文件均为 `{"pages":[<逐页 sch
 | 2026-11-14 | `recognition` | 未声明 → **1.0.0** | 字段依 `skills/pdf-vision/SKILL.md` v1.1.0：`pages[].blocks[]` 含 `block_id`/`text`/`region`；为通过供应商 strict structured output，每个 object 关闭 `additionalProperties`、`required` 覆盖全部 properties，`region` 为归一化 0–1 且可 `null` | B 依据为 SKILL.md，正式双签待补 |
 | 2026-11-14 | `document_ir` | 未声明 → **1.0.0** | 块结构与识别层对齐，`source` 定为 `path_name`/`page_count`/`sha256` 三键可空；`A` 不新增业务字段 | B 依据为 SKILL.md，正式双签待补 |
 | 2026-11-14 | `evidence` | 1.0.0 → **1.0.1** | 仅为 strict 兼容：`value_text`/`region` 由可选改为 required + null，`oneOf` 改 `anyOf`。未新增、未删除字段，语义与 B1 答复一致 | 兼容性调整，字段语义不变 |
+| 2026-11-14 | `evidence` | 1.0.1 → **1.0.2** | 移除 `page_number` 的 `uniqueItems`。真实 provider 输出 `page_number: [1,1]`（一条事实引用同页两个块），被该约束拒绝，而字段自述是"与 `block_id` 按索引对应"，两者冲突。定位数组是位置式，重复页码必须合法；长度一致性改由 `validate.py` 的 `_check_consistency` 检查（不等长报 `SCHEMA_INVALID`）。未新增、未删除字段 | 证据见 `docs/handoff-gate.md` 真实链路表；**待 B 确认** |
 
 **strict 兼容检查**：`schema_loader.MODEL_OUTPUT_SCHEMAS` 在加载时递归校验三条规则
 （每个 object 必须 `additionalProperties:false`、`required` 覆盖全部 properties、禁用 `oneOf`），
@@ -146,11 +149,15 @@ artifacts，不作为必产物。三个可选文件均为 `{"pages":[<逐页 sch
 `[{"x0":x0,"y0":y0,"x1":x1,"y1":y1}]` 或 `null`。既有 recognition schema
 及其版本不变；其余提示词文字与三份新 schema 均按附件原文落盘，不代填 §12 签字。
 
-**当前待办**：三份模型输出 schema 已于 2026-11-14 全部落盘（recognition 1.0.0、
-document_ir 1.0.0、evidence 1.0.1）。剩余问题只有一条，属 A14 范围：
-`evidence.facts[].block_id` 与 `document_ir.blocks[].block_id` 的**交叉存在性校验**尚未实现，
-当前只能校验"是非空字符串"，无法断言"该块真实存在于 IR"。A14 落地时须同时补
-`block_id` 集合比对，否则引用链仍有一环无法自证。
+**当前状态**：七份模型输出 schema 已于 2026-11-14 全部落盘（recognition 1.0.0、
+document_ir 1.0.0、evidence 1.0.2）。`evidence.facts[].block_id` 与
+`document_ir.blocks[].block_id` 的交叉存在性校验**已实现**（`validate.py` 的
+`_check_block_locators`，缺失块报 `SCHEMA_INVALID`；同一函数的 `_check_consistency`
+另检查 `page_number` 与 `block_id` 等长）。
+
+遗留一项属 B 的内容资产：`fixtures/quality/*/document_ir.json` 的 `blocks` 为空数组，
+而对应 `evidence.json` 引用 `B001`。交叉校验会对这五个夹具追加一条 `SCHEMA_INVALID`，
+不影响 I10 的 `expect_codes` 断言，但夹具本身不自洽，待 B 补齐块定义。
 
 ---
 
@@ -162,14 +169,21 @@ document_ir 1.0.0、evidence 1.0.1）。剩余问题只有一条，属 A14 范�
 
 | 资产 | 路径 | A 的行为 |
 |---|---|---|
-| Skill | `source_code/skills/pdf-vision/SKILL.md` | 校验存在性、算 sha256 入 manifest；运行期以 `SkillInput(name, path)` 交给 Codex 加载，**正文不拼进 prompt** |
-| 视觉提示词 | `source_code/prompts/vision.md` | 读全文作为 `TextInput`，sha256 入 manifest |
+| Skill | `source_code/skills/pdf-vision/SKILL.md` | 校验存在性、非空、算 sha256 入 manifest；运行期以 `SkillInput(name, path)` 交给 Codex 加载，**正文不拼进 prompt** |
+| 视觉提示词 | `source_code/prompts/vision.md` | 读全文作为 `TextInput`，sha256 入 manifest；扫描页整页转写 |
+| 表格提示词 | `source_code/prompts/table.md` | 同上；`table_page` 触发，产出 `tables.json` |
+| 图提示词 | `source_code/prompts/figure.md` | 同上；`text_page_with_figure` 触发，产出 `figures.json` |
+| 公式提示词 | `source_code/prompts/formula.md` | 同上；`formula_page` 触发，产出 `formulas.json` |
 | 归一化提示词 | `source_code/prompts/normalize.md` | 同上 |
 | 证据提示词 | `source_code/prompts/evidence.md` | 同上 |
 | 写作提示词 | `source_code/prompts/writer.md` | 读全文作为 `TextInput`，sha256 入 manifest；产出英文草稿 `draft_en.md` |
-| 翻译提示词 | `source_code/prompts/translate.md` | 读全文作为 `TextInput`，sha256 入 manifest；只吃 `draft_en`，产出中文 `draft.md` |
+| 翻译提示词 | `source_code/prompts/translate.md` | 读全文作为 `TextInput`，sha256 入 manifest；只吃 `draft_en`，产出中文 `draft.md`。**当前文件不存在，属 B 待交项（G1-B01）**；缺失时 write 阶段按 `ASSET_MISSING` 失败，不降级 |
 | 修复提示词 | `source_code/prompts/repair.md` | 同上 |
 | 质量夹具 | `source_code/fixtures/quality/<case>/` | 只读消费，结构见 I10 |
+
+**提示词集合以本表 + 代码实际加载点为准**，共 8 个现存文件加 1 个待交项（`translate`）。
+`pipeline/stages/recognize.py` 经 `_VISUAL_PROMPTS` 按页类型选择 `vision`/`table`/`figure`/`formula`，
+`tools/check_assets.py` 会解析该字面量表，因此动态选择不构成"未声明"。
 
 ### 4.2 加载行为（A 实现 `pipeline/prompt_loader.py`）
 
@@ -193,9 +207,16 @@ skill 是引用，由 Codex 按路径自行加载。若把 SKILL.md 正文塞进
 | 情况 | 行为 |
 |---|---|
 | 文件缺失 | 抛 `AssetMissing(code=ASSET_MISSING)`，**不回退内置提示词** |
-| 文件为空或仅空白 | `AssetEmpty(ASSET_EMPTY)`，同样失败 |
-| 首行无 `<!-- version: x.y.z -->` | 加载成功但记 `ASSET_NO_VERSION` warning |
+| 文件为空或仅空白 | `AssetEmpty(ASSET_EMPTY)`，同样失败（提示词与 Skill 均适用，见 2026-11-14 变更） |
+| 提示词首行无 `<!-- version: x.y.z -->` | 加载成功但记 `ASSET_NO_VERSION` warning |
+| Skill 的 YAML frontmatter 内无 `version:` | 加载成功但记 `ASSET_NO_VERSION` warning；版本值同时写入 `stages[].model_calls[].skill_version` |
 | 同一 run 内重复加载 | 允许，但 manifest 只记一份 sha256 |
+
+**Skill 版本为何不写在首行**：Agent Skills 规范要求第 1 行为 `---` 起始的 YAML frontmatter，
+首行 HTML 注释与规范互斥。故 Skill 的版本取自 frontmatter 的 `version:`（或 `metadata.version:`），
+提示词仍取首行 HTML 注释。`pipeline/prompt_loader.py` 的 `_skill_version()` 同时支持两种写法，
+并在 `manifest.assets.skills` 记 sha256、在 `model_calls[].skill_version` 记版本号。
+本行替代 2026-11-14 之前"所有资产首行必须有版本注释"的表述。
 
 关键约定：**A 绝不内置业务提示词。** 若 B 未交付，链路就是跑不通——这是刻意设计，避免"看起来能跑但用的是 A 私自编写的提示词"。A 的工程测试使用 `source_code/tests/fixtures/engineering/stub_prompts/`，该目录不参与正式运行，也不会被误当成 B 的资产。
 
@@ -529,10 +550,10 @@ source_code/fixtures/quality/<case_name>/
 |---|---|---|---|---|
 | I1 CLI | ☐ | ☐ | | |
 | I2 运行目录 | ☐ | ☐ | | |
-| I3 Schema | ☐ | ☐ | | 现有 schema 为空壳，需 B 补字段 |
-| I4 内容资产 | ☐ | ☐ | | 需确认 5 个 prompt 文件名 |
+| I3 Schema | ☐ | ☐ | | 七份 schema 已于 2026-11-14 全部落盘（版本见 I3 表），"空壳"表述作废；待 B 确认字段语义 |
+| I4 内容资产 | ☐ | ☐ | | 现存 8 个提示词 + 1 个 Skill；`translate.md` 属 B 待交项，缺失时 write 阶段 `ASSET_MISSING` 失败 |
 | I5 模型调用 | ☐ | ☐ | | |
-| I6 校验与 code | ☑ | ☐ | 23c237b（代码侧） | 需从 `errors:[str]` 升级为 issues 对象；A 侧 2026-11-13 确认 AUTH_MISSING 不入枚举 |
+| I6 校验与 code | ☑ | ☐ | 23c237b（代码侧） | issues 对象已落地；A 侧 2026-11-13 确认 AUTH_MISSING 不入枚举 |
 | I7 状态与退出码 | ☑ | ☐ | 23c237b（代码侧） | A 侧 2026-11-13 确认 AUTH_MISSING→2、validate `valid=false`→4 |
 | I8 Manifest | ☐ | ☐ | | |
 | I9 Stage 注册 | ☐ | ☐ | | B 可选使用 |

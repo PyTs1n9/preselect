@@ -26,7 +26,7 @@ from pipeline.errors import (
     ModelRefused, ModelTimeout, PdfRenderFailed, PipelineError, TruncatedResponse,
     exit_code_for,
 )
-from pipeline.manifest import create_run_manifest
+from pipeline.manifest import asset_digests, create_run_manifest
 from pipeline.prompt_loader import load_prompt, load_skill
 from pipeline.schema_loader import load_schema
 from pipeline.settings import load_settings
@@ -388,7 +388,17 @@ def test_run_evidence_uses_text_recognition_and_independent_providers(ctx, fake)
         assert request.prompt_text == (STUB_PROMPTS / f"{request.stage}.md").read_text(encoding="utf-8")
     manifest = _json(ctx.run_dir / "manifest.json")
     assert set(manifest) == set(create_run_manifest(ctx.run_id, ctx.material_id, ctx.settings))
-    assert manifest["assets"] == {"prompts": {}, "skills": {}, "schemas": {}}
+    # I8: every loadable asset must be hashed at run creation, so a later B-side
+    # edit is visible by comparing digests instead of trusting a note.
+    assert manifest["assets"] == asset_digests(ctx.settings)
+    for group in ("prompts", "skills", "schemas"):
+        assert manifest["assets"][group], f"manifest.assets.{group} must not be empty"
+        for name, digest in manifest["assets"][group].items():
+            assert len(digest) == 64 and int(digest, 16) >= 0, name
+    assert set(manifest["code"]) == {"git_commit", "files"}
+    assert manifest["code"]["files"], "pipeline file hashes must be recorded"
+    assert manifest["deps"].get("jsonschema"), "dependency versions must be recorded"
+    assert manifest["calls"] == {"recognize": 0, "normalize": 1, "evidence": 1}
     assert len(manifest["stages"]) == 3
     for record in manifest["stages"]:
         assert set(record) == {"name", "status", "started_at", "ended_at", "duration_ms", "artifacts", "issues", "model_calls"}

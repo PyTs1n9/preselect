@@ -18,22 +18,27 @@ from pipeline.validate import validate_run
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="PDF vision pipeline")
+    # I1: --json is accepted after the subcommand, so it belongs to every one.
+    common = argparse.ArgumentParser(add_help=False)
+    common.add_argument("--json", action="store_true", help="print a single-line JSON object")
     subs = parser.add_subparsers(dest="command", required=True)
-    run = subs.add_parser("run", help="run registered pipeline stages")
+    run = subs.add_parser("run", parents=[common], help="run registered pipeline stages")
     run.add_argument("pdf", type=Path)
     run.add_argument("--config", type=Path, default=Path("config.json"))
     run.add_argument("--output", type=Path, default=Path("result/runs"))
     run.add_argument("--material-id", default=None)
     run.add_argument("--stage", default="all")
-    demo = subs.add_parser("demo", help="exercise all stages with local replay outputs")
+    run.add_argument("--resume", action="store_true",
+                     help="skip stages whose manifest record and artifacts are intact")
+    demo = subs.add_parser("demo", parents=[common], help="exercise all stages with local replay outputs")
     demo.add_argument("--pdf", type=Path, default=Path("../materials/ges_docs_MED-04.pdf"))
     demo.add_argument("--material-id", default="DEMO-01")
     demo.add_argument("--output", type=Path, default=Path("result/runs"))
-    doctor = subs.add_parser("doctor", help="show resolved configuration")
+    doctor = subs.add_parser("doctor", parents=[common], help="show resolved configuration")
     doctor.add_argument("--offline", action="store_true")
-    validate = subs.add_parser("validate", help="validate an existing run")
+    validate = subs.add_parser("validate", parents=[common], help="validate an existing run")
     validate.add_argument("--run-id", required=True)
-    package = subs.add_parser("package", help="build a submission package")
+    package = subs.add_parser("package", parents=[common], help="build a submission package")
     package.add_argument("--materials", nargs="+", required=True)
     package.add_argument("--out", required=True, type=Path)
     return parser
@@ -41,10 +46,19 @@ def build_parser() -> argparse.ArgumentParser:
 
 def _run(args: argparse.Namespace) -> dict:
     settings = load_settings(config_path=args.config)
-    return _execute_run(args.pdf, args.material_id or args.pdf.stem, args.output, settings, args.stage)
+    material_id = args.material_id
+    if material_id is None:
+        material_id = args.pdf.stem
+        # I1: deriving the id is allowed, but it must be visible on stderr so a
+        # mistyped run directory is not discovered after the fact.
+        print(f"warning: --material-id omitted; derived {material_id!r} from the PDF file name",
+              file=sys.stderr)
+    return _execute_run(args.pdf, material_id, args.output, settings, args.stage,
+                        resume=getattr(args, "resume", False))
 
 
-def _execute_run(pdf: Path, material_id: str, output: Path, settings, stage: str) -> dict:
+def _execute_run(pdf: Path, material_id: str, output: Path, settings, stage: str,
+                 resume: bool = False) -> dict:
     run_id = uuid4().hex
     run_dir = output / material_id / run_id
     # I2 requires the layout even when a stage fails early; stages only fill it.
@@ -53,7 +67,7 @@ def _execute_run(pdf: Path, material_id: str, output: Path, settings, stage: str
     # The source PDF never enters the run directory, so it is passed to stages
     # as an artifact path instead of being copied.
     context = RunContext(run_id, material_id, run_dir, settings, {"source_pdf": pdf})
-    results = run_stages(context, stage)
+    results = run_stages(context, stage, resume=resume)
     return {"run_id": run_id, "run_dir": str(run_dir), "stages": [result.__dict__ for result in results]}
 
 
@@ -122,7 +136,10 @@ def main(argv: list[str] | None = None) -> int:
         code = 0
         if isinstance(result, tuple):
             result, code = result
-        print(json.dumps(result, ensure_ascii=False, indent=2, default=str))
+        if getattr(args, "json", False):
+            print(json.dumps(result, ensure_ascii=False, default=str, separators=(",", ":")))
+        else:
+            print(json.dumps(result, ensure_ascii=False, indent=2, default=str))
         return code
     except Exception as exc:
         code = getattr(exc, "code", "UNCLASSIFIED")

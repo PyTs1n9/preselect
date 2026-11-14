@@ -1,9 +1,9 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "evidence.schema.json",
-  "schema_version": "1.0.1",
+  "schema_version": "1.0.2",
   "title": "Evidence facts",
-  "description": "B1 字段定义的落盘版本。1.0.1 仅为 strict structured output 兼容而调整：可选字段改为 required + null、oneOf 改为 anyOf，未新增或删除字段。",
+  "description": "B1 字段定义的落盘版本。1.0.2 移除 page_number 的 uniqueItems：一条事实引用同一页的多个块时，页码数组必然是 [1, 1]，它与本字段自述的“与 block_id 按索引对应”冲突；长度一致性改由 validate.py 检查。1.0.1 仅为 strict structured output 兼容而调整：可选字段改为 required + null、oneOf 改为 anyOf。",
   "type": "object",
   "required": ["material_id", "facts"],
   "properties": {
@@ -30,10 +30,9 @@
             "type": "boolean"
           },
           "page_number": {
-            "description": "定位页码数组，跨页按源顺序；与 block_id 按索引对应。",
+            "description": "定位页码数组，跨页按源顺序；与 block_id 按索引对应。同一页的多个块会产生重复页码，故不设 uniqueItems。",
             "type": "array",
             "minItems": 1,
-            "uniqueItems": true,
             "items": {"type": "integer", "minimum": 1}
           },
           "block_id": {

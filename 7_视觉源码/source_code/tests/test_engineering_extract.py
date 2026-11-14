@@ -257,7 +257,9 @@ def test_recognize_numeric_conflicts_use_set_difference_and_strict_boundary(
     assert actual == (build_blocks_from_text(source_text) if rejected else payload["pages"][0]["blocks"])
     reasons = _read(ctx.run_dir / "page_plan.json")["pages"][0]["reasons"]
     assert (f"vision_rejected=数字冲突{conflicts}处" in reasons) is rejected
-    warnings = [issue for issue in _record(ctx)["issues"] if issue["severity"] == "warning"]
+    # A missing skill version belongs to B's asset state, not to this check.
+    warnings = [issue for issue in _record(ctx)["issues"]
+                if issue["severity"] == "warning" and issue["code"] != "ASSET_NO_VERSION"]
     if conflicts:
         assert f"numeric_conflicts={conflicts}" in reasons
         assert any(issue["code"] == "NUMBER_MISMATCH" for issue in warnings)
@@ -305,7 +307,16 @@ def test_specialized_routes_keep_text_blocks_and_write_valid_page_output(
     assert request.prompt_name == name and request.json_schema == load_schema(name)
     assert request.images == [ctx.run_dir / "input" / "page_0001.png"]
     assert factory.providers[0].closed
-    assert _record(ctx)["issues"] == []
+    record = _record(ctx)
+    # Whether SKILL.md declares a version is B's content decision. When it is
+    # absent the loader must surface a warning, and that warning is the only
+    # issue this stage may add on its own.
+    assert [issue for issue in record["issues"] if issue["code"] != "ASSET_NO_VERSION"] == []
+    call = record["model_calls"][0]
+    assert "skill_sha256" in call and "skill_version" in call
+    if call["skill_version"] is None:
+        assert any(issue["code"] == "ASSET_NO_VERSION" and issue["path"].endswith("SKILL.md")
+                   for issue in record["issues"])
 
 
 def test_small_embedded_image_does_not_trigger_vision(tmp_path, monkeypatch):

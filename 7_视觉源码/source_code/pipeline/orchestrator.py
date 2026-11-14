@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import time
 from dataclasses import dataclass
 from enum import Enum
@@ -11,6 +12,9 @@ from typing import Any, Callable
 from .contracts import RunContext, StageResult
 from .errors import PipelineError
 from .stages import discover_modules
+
+# Artifacts that are not JSON. Everything else is written as <name>.json.
+_TEXT_ARTIFACTS = {"draft": "draft.md", "draft_en": "draft_en.md", "final": "final.md"}
 
 
 class Stage(str, Enum):
@@ -98,7 +102,36 @@ def _execution_order(target: str) -> list[str]:
     return ordered
 
 
-def run_stages(ctx: RunContext, target: str) -> list[StageResult]:
+def artifact_paths(ctx: RunContext, spec: StageSpec) -> dict[str, Path]:
+    """Where a stage's declared artifacts live. Kept in one place so resume,
+    cache and packaging cannot drift from each other."""
+    return {name: ctx.run_dir / _TEXT_ARTIFACTS.get(name, f"{name}.json")
+            for name in spec.produces}
+
+
+def _resumable(ctx: RunContext, spec: StageSpec) -> bool:
+    """I1 resume: a stage is skipped only when its manifest record succeeded and
+    every declared artifact is still on disk and parseable."""
+    try:
+        manifest = json.loads((ctx.run_dir / "manifest.json").read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError):
+        return False
+    records = {stage.get("name"): stage for stage in manifest.get("stages") or [] if isinstance(stage, dict)}
+    record = records.get(spec.name)
+    if not isinstance(record, dict) or record.get("status") != "ok":
+        return False
+    for name, path in artifact_paths(ctx, spec).items():
+        if not path.is_file():
+            return False
+        if path.suffix == ".json":
+            try:
+                json.loads(path.read_text(encoding="utf-8"))
+            except (OSError, UnicodeError, json.JSONDecodeError):
+                return False
+    return True
+
+
+def run_stages(ctx: RunContext, target: str, resume: bool = False) -> list[StageResult]:
     discover_stages()
     order = _execution_order(target.value if isinstance(target, Stage) else target)
     results: list[StageResult] = []
@@ -106,6 +139,11 @@ def run_stages(ctx: RunContext, target: str) -> list[StageResult]:
     for name in order:
         spec = STAGE_REGISTRY[name]
         started = time.perf_counter()
+        if resume and _resumable(ctx, spec):
+            resumed = artifact_paths(ctx, spec)
+            artifacts.update(resumed)
+            results.append(StageResult(name, "skipped", 0.0, dict(resumed), []))
+            continue
         try:
             output = spec.fn(ctx, dict(artifacts))
             duration = (time.perf_counter() - started) * 1000

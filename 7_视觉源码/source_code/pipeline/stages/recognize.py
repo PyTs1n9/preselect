@@ -204,6 +204,11 @@ def run(ctx: RunContext, inputs: dict[str, Path]) -> StageResult:
             schema = load_schema(schema_name)
             call = state.prompt(name, prompt)
             call["skill_sha256"] = skill.sha256
+            call["skill_version"] = skill.version
+            if skill.version is None:
+                state.issues.append(Issue(Code.ASSET_NO_VERSION, STAGE_NAME,
+                                          "skills/pdf-vision/SKILL.md", "warning",
+                                          "Skill has no version declaration"))
             request_payload = {"material_id": ctx.material_id, "page_count": info.page_count,
                                "pages": [{"page_number": number}]}
             if name != "vision":
