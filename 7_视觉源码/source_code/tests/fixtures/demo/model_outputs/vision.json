@@ -1,0 +1,14 @@
+{
+  "pages": [
+    {
+      "page_number": {{page_number}},
+      "blocks": [
+        {
+          "block_id": "B001",
+          "text": "仅用于离线回放的合成文本。",
+          "region": null
+        }
+      ]
+    }
+  ]
+}

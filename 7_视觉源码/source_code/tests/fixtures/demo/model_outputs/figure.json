@@ -1,0 +1,17 @@
+{
+  "page_number": {{page_number}},
+  "figures": [
+    {
+      "figure_id": "G01",
+      "caption": "回放示意图",
+      "description": "此图仅为离线回放提供工程样本，不表示真实图像识别结果。",
+      "readouts": [
+        {
+          "label": "样本",
+          "value_text": "无数值读数"
+        }
+      ],
+      "bbox": null
+    }
+  ]
+}
