@@ -19,7 +19,7 @@
 | W0 | S0 | source_code/main.py | 2026-11-13 | 已释放 |
 
 | A6+A7 | S1 | source_code/pipeline/pdf_input.py | 2026-11-13 20:48 | 占用中 |
-| A6+A7 | S1 | source_code/pipeline/codex_adapter.py | 2026-11-13 20:48 | 占用中 |
+| A6+A7 | S1 | source_code/pipeline/codex_adapter.py | 2026-11-13 20:48 | 已释放（A14b 回收，超 40 分钟未交付） |
 | A6+A7 | S1 | source_code/pipeline/vision_provider.py | 2026-11-13 20:48 | 占用中 |
 | A6+A7 | S1 | source_code/tests/test_engineering_input.py | 2026-11-13 20:48 | 占用中 |
 | A8 | S3 | source_code/pipeline/prompt_loader.py、source_code/pipeline/stages/{_shared,recognize,normalize,evidence}.py、source_code/tests/test_engineering_stages.py、source_code/tests/test_engineering_fixture_snapshot.py（跨卡，仅改 1 行参数化）、source_code/tests/fixtures/engineering/stub_prompts/{vision,normalize,evidence}.md | 2026-11-14 00:30（事后补登：A8 未在开工前登记） | 已释放 |
@@ -44,6 +44,8 @@
 | A19 | S0 | 本卡确认的 17 个白名单文件：pipeline/extract.py、pipeline/stages/recognize.py、pipeline/schema_loader.py；schemas/{table,figure,formula}.schema.json；prompts/{vision,table,figure,formula}.md；tests/test_engineering_{extract,stages,validate}.py（以上均在 source_code/）；docs/接口冻结清单_A-B.md、.parallel/{STATE,CLAIMS}.md、.parallel/handoffs/A19.md。用户已确认实施范围及 vision region 说明对齐既有 schema | 2026-11-14 15:04:50 +08:00 | 已释放 |
 
 | A14 | S0 | source_code/pipeline/validate.py；tests/test_engineering_{fixtures,validate,package,write_repair}.py 与 tests/fixtures/engineering/run_*/（均在 source_code/）；docs/接口冻结清单_A-B.md；.parallel/{STATE,CLAIMS}.md 与 handoffs/A14.md。用户确认五项检查口径并扩容 write_repair 测试；B 夹具只读；before/after确认后逐份重生成快照 | 2026-11-14 15:39:29 +08:00 | 已释放 |
+
+| A14b | S0 | source_code/tests/test_engineering_faults.py、source_code/pipeline/codex_adapter.py（仅 turn.run 异常路径失败审计）、docs/fault-injection.md、.parallel/{STATE,CLAIMS}.md、.parallel/handoffs/A14b.md；按用户裁决回收 adapter 旧占用，其余 A6+A7 文件不动 | 2026-11-14 16:31:56 +08:00 | 已释放 |
 
 ## 契约变更申请
 

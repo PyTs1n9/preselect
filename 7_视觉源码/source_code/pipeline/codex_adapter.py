@@ -239,8 +239,31 @@ class CodexAdapter:
         timer = threading.Timer(timeout_s, self._interrupt_safely, args=(turn,))
         timer.daemon = True
         timer.start()
+        turn_started = time.perf_counter()
         try:
             result = turn.run()
+        except Exception as exc:
+            # No TurnResult exists: record the failed attempt, not a fabricated response.
+            try:
+                message = redact(str(exc), (self._secret, self._settings.vision.base_url or ""))
+                message = re.sub(r"https?://[^\s<>\"']+", "[endpoint]", message, flags=re.IGNORECASE)
+                # Paths may contain spaces, so redact their remaining line as well.
+                message = re.sub(r"(?i)(?:[a-z]:[\\/]|\\|/)[^\r\n]*",
+                                 "[path]", message)
+                payload = {
+                    "stage": request.stage, "attempt": attempt, "turn_status": "failed",
+                    "error_type": type(exc).__name__, "error_message": message[:200],
+                    "final_response": None, "items": [], "usage": {},
+                    "duration_ms": (time.perf_counter() - turn_started) * 1000.0,
+                    "timeout_s": timeout_s,
+                }
+                path = self._raw_path(request, attempt)
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+            except Exception:
+                # Audit failure must not replace the original SDK exception or its mapping.
+                exc.add_note("Unable to persist failed model attempt audit")
+            raise
         finally:
             timer.cancel()
         return result, self._write_raw(request, attempt, result)
