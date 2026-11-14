@@ -282,8 +282,8 @@ def test_schema_failure_keeps_evidence_and_stops_next_stage(ctx, fake):
     assert all(provider.closed for provider in fake.providers)
 
 
-def test_run_all_uses_dependency_order_and_independent_providers(ctx, fake):
-    outputs = orchestrator.run_stages(ctx, "all")
+def test_run_evidence_uses_dependency_order_and_independent_providers(ctx, fake):
+    outputs = orchestrator.run_stages(ctx, "evidence")
     assert [output.name for output in outputs] == ["recognize", "normalize", "evidence"]
     assert [request.stage for request in fake.requests] == ["recognize", "normalize", "evidence"]
     assert len(fake.providers) == 3 and all(provider.closed for provider in fake.providers)
@@ -347,7 +347,7 @@ def test_malformed_input_json_fails_before_provider(ctx, fake, module, content):
 
 def test_prompt_directory_replacement_requires_zero_code_changes(ctx, fake, tmp_path):
     functions_before = tuple(module.run for module in MODULES)
-    orchestrator.run_stages(ctx, "all")
+    orchestrator.run_stages(ctx, "evidence")
     original = list(fake.requests)
     replacement = tmp_path / "replacement-prompts"
     replacement.mkdir()
@@ -355,7 +355,7 @@ def test_prompt_directory_replacement_requires_zero_code_changes(ctx, fake, tmp_
         (replacement / f"{name}.md").write_text(
             f"<!-- version: 0.0.2-stub -->\n仅供工程测试：另一份 {name} 文案。\n", encoding="utf-8")
     context = replace(ctx, settings=replace(ctx.settings, paths=replace(ctx.settings.paths, prompts_dir=replacement)))
-    outputs = orchestrator.run_stages(context, "all")
+    outputs = orchestrator.run_stages(context, "evidence")
     assert all(output.status == "ok" for output in outputs)
     assert tuple(module.run for module in MODULES) == functions_before
     for before, after in zip(original, fake.requests[3:]):
@@ -391,7 +391,7 @@ def test_model_failures_propagate_unchanged_and_close(ctx, fake, module, error_t
 
 
 def test_manifest_removes_urls_credentials_and_absolute_paths(ctx, fake):
-    orchestrator.run_stages(ctx, "all")
+    orchestrator.run_stages(ctx, "evidence")
     text = (ctx.run_dir / "manifest.json").read_text(encoding="utf-8")
     assert "https://" not in text and "sk-" not in text
     assert ctx.settings.vision.base_url not in text
@@ -445,7 +445,7 @@ def test_prompt_names_cannot_escape_configured_directory(tmp_path):
 def test_relative_run_directory_records_relative_artifacts(ctx, fake, tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     context = replace(ctx, run_dir=Path("relative-run"))
-    outputs = orchestrator.run_stages(context, "all")
+    outputs = orchestrator.run_stages(context, "evidence")
     assert all(output.status == "ok" for output in outputs)
     records = _json(context.run_dir / "manifest.json")["stages"]
     assert [record["artifacts"] for record in records] == [
