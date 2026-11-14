@@ -15,9 +15,10 @@ STAGE_NAME = "recognize"
 REQUIRES = []
 PRODUCES = ["recognition"]
 
-# One image-heavy turn per five pages keeps a 50-page paper inside the model's
-# per-turn limits; the whole document used to be sent as a single request.
-BATCH_PAGES = 5
+# Measured against MED-04: one dense page is ~4.8k characters of verbatim text
+# and takes ~100s; a two-page turn already exceeded a 300s cap. One page per
+# turn is the only configuration proven to finish, at the cost of more calls.
+BATCH_PAGES = 1
 
 
 def _batch_failure(message: str) -> PipelineError:

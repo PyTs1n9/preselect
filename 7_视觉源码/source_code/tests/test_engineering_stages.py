@@ -199,7 +199,8 @@ def test_unversioned_prompt_warns_without_failing(ctx, fake, tmp_path, module):
     assert any(issue["code"] == "ASSET_NO_VERSION" and issue["severity"] == "warning" for issue in record["issues"])
 
 
-def test_recognize_preserves_output_and_exact_request(ctx, fake):
+def test_recognize_preserves_output_and_exact_request(ctx, fake, monkeypatch):
+    monkeypatch.setattr(recognize, "BATCH_PAGES", 2)
     fake.outputs["recognize"] = {"pages": [{"page_number": 1, "blocks": []},
                                            {"page_number": 2, "blocks": []}]}
     output = recognize.run(ctx, {})
@@ -247,23 +248,26 @@ def _pdf_with_pages(path: Path, count: int) -> Path:
     return path
 
 
-def test_recognize_batches_pages_and_merges_them_in_order(ctx, fake, tmp_path):
+def test_recognize_batches_pages_and_merges_them_in_order(ctx, fake, tmp_path, monkeypatch):
+    # Production runs one page per turn; the merge logic is exercised with three.
+    monkeypatch.setattr(recognize, "BATCH_PAGES", 3)
     ctx = replace(ctx, artifacts={"source_pdf": _pdf_with_pages(tmp_path / "seven.pdf", 7)})
     fake.outputs["recognize"] = lambda request: {
         "pages": [{"page_number": page["page_number"], "blocks": []}
                   for page in request.payload["pages"]]}
     output = recognize.run(ctx, {})
     assert output.status == "ok"
-    assert [len(request.images) for request in fake.requests] == [5, 2]
+    assert [len(request.images) for request in fake.requests] == [3, 3, 1]
     assert [request.payload["pages"] for request in fake.requests] == [
-        [{"page_number": number} for number in (1, 2, 3, 4, 5)],
-        [{"page_number": number} for number in (6, 7)],
+        [{"page_number": number} for number in (1, 2, 3)],
+        [{"page_number": number} for number in (4, 5, 6)],
+        [{"page_number": 7}],
     ]
     assert all(request.payload["page_count"] == 7 for request in fake.requests)
     merged = _json(ctx.run_dir / "recognition.json")
     assert [page["page_number"] for page in merged["pages"]] == [1, 2, 3, 4, 5, 6, 7]
-    assert len(fake.providers) == 2 and all(provider.closed for provider in fake.providers)
-    assert len(_stage_record(ctx, "recognize")["model_calls"]) == 2
+    assert len(fake.providers) == 3 and all(provider.closed for provider in fake.providers)
+    assert len(_stage_record(ctx, "recognize")["model_calls"]) == 3
 
 
 def test_recognize_rejects_incomplete_page_coverage(ctx, fake):
@@ -310,7 +314,8 @@ def test_png_count_mismatch_fails_before_model(ctx, fake, monkeypatch):
     assert _stage_record(ctx, "recognize")["status"] == "failed"
 
 
-def test_schema_failure_keeps_evidence_and_stops_next_stage(ctx, fake):
+def test_schema_failure_keeps_evidence_and_stops_next_stage(ctx, fake, monkeypatch):
+    monkeypatch.setattr(recognize, "BATCH_PAGES", 2)
     fake.outputs["normalize"] = {"document_id": "MODEL-RAW-MUST-NOT-ENTER-ERROR"}
     with pytest.raises(PipelineError) as caught:
         orchestrator.run_stages(ctx, "all")
@@ -327,7 +332,8 @@ def test_schema_failure_keeps_evidence_and_stops_next_stage(ctx, fake):
     assert all(provider.closed for provider in fake.providers)
 
 
-def test_run_evidence_uses_dependency_order_and_independent_providers(ctx, fake):
+def test_run_evidence_uses_dependency_order_and_independent_providers(ctx, fake, monkeypatch):
+    monkeypatch.setattr(recognize, "BATCH_PAGES", 2)
     outputs = orchestrator.run_stages(ctx, "evidence")
     assert [output.name for output in outputs] == ["recognize", "normalize", "evidence"]
     assert [request.stage for request in fake.requests] == ["recognize", "normalize", "evidence"]
@@ -396,7 +402,8 @@ def test_malformed_input_json_fails_before_provider(ctx, fake, module, content):
     assert _stage_record(ctx, module.STAGE_NAME)["status"] == "failed"
 
 
-def test_prompt_directory_replacement_requires_zero_code_changes(ctx, fake, tmp_path):
+def test_prompt_directory_replacement_requires_zero_code_changes(ctx, fake, tmp_path, monkeypatch):
+    monkeypatch.setattr(recognize, "BATCH_PAGES", 2)
     functions_before = tuple(module.run for module in MODULES)
     orchestrator.run_stages(ctx, "evidence")
     original = list(fake.requests)
