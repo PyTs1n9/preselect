@@ -60,10 +60,9 @@ def test_failed_report_is_still_printed_before_exit(tmp_path, monkeypatch, capsy
 def test_run_creates_i2_layout_and_passes_source_pdf(tmp_path, monkeypatch):
     captured: dict = {}
 
-    def fake_run_stages(context, stage, resume=False):
+    def fake_run_stages(context, stage):
         captured["context"] = context
         captured["stage"] = stage
-        captured["resume"] = resume
         return []
 
     monkeypatch.setattr(runner, "run_stages", fake_run_stages)
@@ -97,11 +96,11 @@ def test_json_flag_prints_a_single_line_object(tmp_path, monkeypatch, capsys):
 def test_default_material_id_is_derived_and_announced(tmp_path, monkeypatch, capsys):
     captured: dict = {}
 
-    def fake_run_stages(context, stage, resume=False):
+    def fake_run_stages(context, stage):
         captured["material_id"] = context.material_id
         return []
 
-    monkeypatch.setattr(main, "run_stages", fake_run_stages)
+    monkeypatch.setattr(runner, "run_stages", fake_run_stages)
     monkeypatch.setattr(main, "load_settings", lambda **_: _settings(tmp_path))
     pdf = tmp_path / "paper.pdf"
     pdf.write_bytes(b"%PDF-1.4\n")
