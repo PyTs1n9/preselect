@@ -22,7 +22,7 @@ from pipeline.settings import load_settings
 from pipeline.validate import validate_run
 
 FIXTURES = Path(__file__).parent / "fixtures" / "engineering"
-CASES = sorted(path.name for path in FIXTURES.iterdir() if path.is_dir())
+CASES = sorted(path.name for path in FIXTURES.glob("run_*") if path.is_dir())
 
 
 @pytest.mark.parametrize("case", CASES)
