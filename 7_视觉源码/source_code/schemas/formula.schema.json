@@ -1,0 +1,11 @@
+{"$schema":"https://json-schema.org/draft/2020-12/schema","$id":"formula.schema.json","schema_version":"1.0.0",
+"type":"object","additionalProperties":false,"required":["page_number","formulas"],
+"properties":{"page_number":{"type":"integer","minimum":1},
+"formulas":{"type":"array","items":{"type":"object","additionalProperties":false,
+"required":["formula_id","text","symbols","bbox"],
+"properties":{
+"formula_id":{"type":"string","pattern":"^E[0-9]{2,}$"},
+"text":{"type":"string","minLength":1},
+"symbols":{"type":"array","items":{"type":"object","additionalProperties":false,
+"required":["symbol","meaning"],"properties":{"symbol":{"type":"string"},"meaning":{"type":["string","null"]}}}},
+"bbox":{"type":["array","null"],"minItems":4,"maxItems":4,"items":{"type":"number","minimum":0,"maximum":1}}}}}}}

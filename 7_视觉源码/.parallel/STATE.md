@@ -15,6 +15,7 @@
 | A15 | W2 | S3 | blocked | 7 | 门禁与读回机制、拒绝路径已交付并验收；7 为拒绝路径退出码；正向 exit=0 依赖 A14 关闭五项一致性检查或按 §11 变更 I6 第 290 行 |
 | A17 | W2 | S0 | done | 0 | evidence schema 1.0.0 落盘（B1 片段原样，A 未增删字段）；5 个工程夹具迁移并重生成 validation.json；194 passed 未降；I3 已登记，B 正式双签待补 |
 | A18 | W2 | S0 | done | 0 | recognition/document_ir 按 strict 模式落盘 1.0.0、evidence 升 1.0.1；识别改 5 页/批并校验页覆盖；写入改两段式（draft_en → draft）；201 passed。未覆盖：prompts/translate.md 未交付，真实 run 停在 ASSET_MISSING；block_id 交叉校验归 A14 |
+| A19 | W2 | S0 | done | 0 | 文本层优先、按页视觉；239 passed；MED-04 五页全 text_page、0 次模型调用，manifest recognize 1103.935ms、CLI 总耗时 1493.862ms；recognition schema 通过；三专用产物下游尚未消费，正式双签待补 |
 | A10 | W2 | S0 | todo | — | 端到端，只跑不改 |
 | A13 | W3 | S0 | todo | — | 四份材料串行 |
 | A16 | W3 | S0 | todo | — | 干净环境 |

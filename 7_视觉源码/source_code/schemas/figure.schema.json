@@ -1,0 +1,12 @@
+{"$schema":"https://json-schema.org/draft/2020-12/schema","$id":"figure.schema.json","schema_version":"1.0.0",
+"type":"object","additionalProperties":false,"required":["page_number","figures"],
+"properties":{"page_number":{"type":"integer","minimum":1},
+"figures":{"type":"array","items":{"type":"object","additionalProperties":false,
+"required":["figure_id","caption","description","readouts","bbox"],
+"properties":{
+"figure_id":{"type":"string","pattern":"^G[0-9]{2,}$"},
+"caption":{"type":["string","null"]},
+"description":{"type":"string","minLength":20},
+"readouts":{"type":"array","items":{"type":"object","additionalProperties":false,
+"required":["label","value_text"],"properties":{"label":{"type":"string"},"value_text":{"type":"string"}}}},
+"bbox":{"type":["array","null"],"minItems":4,"maxItems":4,"items":{"type":"number","minimum":0,"maximum":1}}}}}}}

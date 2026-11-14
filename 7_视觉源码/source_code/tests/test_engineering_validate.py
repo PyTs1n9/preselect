@@ -414,7 +414,7 @@ def test_strict_output_rules_are_checked_locally():
     assert any("oneOf" in issue for issue in _strict_issues({"oneOf": [{"type": "string"}]}))
 
 
-@pytest.mark.parametrize("name", ["recognition", "document_ir", "evidence"])
+@pytest.mark.parametrize("name", ["recognition", "document_ir", "evidence", "table", "figure", "formula"])
 def test_model_output_schemas_are_strict_compatible(name):
     from pipeline.schema_loader import _strict_issues, load_schema
 

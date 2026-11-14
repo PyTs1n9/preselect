@@ -17,6 +17,7 @@ from pathlib import Path
 
 import pytest
 from pypdf import PdfWriter
+from pypdf.generic import DecodedStreamObject, DictionaryObject, NameObject
 
 from pipeline import orchestrator
 from pipeline.contracts import ModelResult, PageInfo, PdfInfo, RunContext
@@ -108,7 +109,7 @@ class FakeProvider:
 class FakeFactory:
     def __init__(self):
         self.outputs = {stage: _json(FIXTURES / "run_ok" / f"{artifact}.json") for stage, artifact in ARTIFACTS.items()}
-        # Recognition is page-batched, so the fake must answer the pages it was
+        # Recognition is page-specific, so the fake must answer the pages it was
         # asked for instead of replaying a fixed artifact.
         self.outputs["recognize"] = lambda request: {
             "pages": [{"page_number": page["page_number"], "blocks": []}
@@ -199,34 +200,40 @@ def test_unversioned_prompt_warns_without_failing(ctx, fake, tmp_path, module):
     assert any(issue["code"] == "ASSET_NO_VERSION" and issue["severity"] == "warning" for issue in record["issues"])
 
 
-def test_recognize_preserves_output_and_exact_request(ctx, fake, monkeypatch):
-    monkeypatch.setattr(recognize, "BATCH_PAGES", 2)
-    fake.outputs["recognize"] = {"pages": [{"page_number": 1, "blocks": []},
-                                           {"page_number": 2, "blocks": []}]}
+def test_recognize_preserves_scan_output_and_exact_requests(ctx, fake):
+    fake.outputs["recognize"] = lambda request: {
+        "pages": [{"page_number": request.payload["pages"][0]["page_number"],
+                   "blocks": [{"block_id": "B001", "text": "Visible scan text", "region": None}]}]}
     output = recognize.run(ctx, {})
     path = ctx.run_dir / "recognition.json"
     assert output.name == "recognize" and output.status == "ok"
     assert output.duration_ms == 0.0
-    assert output.artifacts == {"recognition": path}
-    assert _json(path) == fake.outputs["recognize"]
+    assert output.artifacts == {"recognition": path, "page_text": ctx.run_dir / "page_text.json",
+                                "page_plan": ctx.run_dir / "page_plan.json"}
+    assert _json(path) == {"pages": [
+        {"page_number": number,
+         "blocks": [{"block_id": "B001", "text": "Visible scan text", "region": None}]}
+        for number in (1, 2)]}
     assert list(_json(path)) == ["pages"]
     assert path.read_bytes().endswith(b"\n")
     assert not path.read_bytes().startswith(b"\xef\xbb\xbf")
-    request, = fake.requests
-    assert request.stage == "recognize" and request.prompt_name == "vision"
-    assert request.prompt_text == (STUB_PROMPTS / "vision.md").read_text(encoding="utf-8")
-    assert request.payload == {"material_id": ctx.material_id, "page_count": 2, "pages": [{"page_number": 1}, {"page_number": 2}]}
-    assert request.json_schema == load_schema("recognition")
-    assert request.images == [ctx.run_dir / "input" / f"page_{n:04d}.png" for n in (1, 2)]
-    assert all(path.is_file() for path in request.images)
-    assert all(path.read_bytes().startswith(b"\x89PNG\r\n\x1a\n") for path in request.images)
     skill = (ROOT / "skills" / "pdf-vision" / "SKILL.md").resolve()
-    assert request.skill == ("pdf-vision", str(skill))
-    assert skill.read_text(encoding="utf-8-sig") not in request.prompt_text
-    assert request.timeout_s == ctx.settings.vision.timeout_s
-    assert request.model == ctx.settings.vision.model
-    assert fake.options == [{"settings": ctx.settings, "run_dir": ctx.run_dir}]
-    assert len(fake.providers) == 1 and fake.providers[0].closed
+    assert len(fake.requests) == 2
+    for number, request in enumerate(fake.requests, 1):
+        assert request.stage == "recognize" and request.prompt_name == "vision"
+        assert request.prompt_text == (STUB_PROMPTS / "vision.md").read_text(encoding="utf-8")
+        assert request.payload == {"material_id": ctx.material_id, "page_count": 2,
+                                   "pages": [{"page_number": number}]}
+        assert request.json_schema == load_schema("recognition")
+        assert request.images == [ctx.run_dir / "input" / f"page_{number:04d}.png"]
+        assert all(path.is_file() for path in request.images)
+        assert all(path.read_bytes().startswith(b"\x89PNG\r\n\x1a\n") for path in request.images)
+        assert request.skill == ("pdf-vision", str(skill))
+        assert skill.read_text(encoding="utf-8-sig") not in request.prompt_text
+        assert request.timeout_s == ctx.settings.vision.timeout_s
+        assert request.model == ctx.settings.vision.model
+    assert fake.options == [{"settings": ctx.settings, "run_dir": ctx.run_dir}] * 2
+    assert len(fake.providers) == 2 and all(provider.closed for provider in fake.providers)
     digest = hashlib.sha256(ctx.artifacts["source_pdf"].read_bytes()).hexdigest()
     assert (ctx.run_dir / "input" / "source.pdf.sha256").read_bytes() == (digest + "\n").encode("ascii")
     manifest = _json(ctx.run_dir / "manifest.json")
@@ -234,9 +241,13 @@ def test_recognize_preserves_output_and_exact_request(ctx, fake, monkeypatch):
     assert not (ctx.run_dir / "input" / "source.pdf").exists()
     assert not (ctx.run_dir / "validation.json").exists()
     record = _stage_record(ctx, "recognize")
-    assert record["artifacts"] == {"recognition": "recognition.json"}
-    assert record["model_calls"][0]["prompt_sha256"] == hashlib.sha256((STUB_PROMPTS / "vision.md").read_bytes()).hexdigest()
-    assert record["model_calls"][0]["skill_sha256"] == hashlib.sha256(skill.read_bytes()).hexdigest()
+    assert record["artifacts"] == {"recognition": "recognition.json", "page_text": "page_text.json",
+                                   "page_plan": "page_plan.json"}
+    assert len(record["model_calls"]) == 2
+    for call in record["model_calls"]:
+        assert call["prompt_sha256"] == hashlib.sha256((STUB_PROMPTS / "vision.md").read_bytes()).hexdigest()
+        assert call["skill_sha256"] == hashlib.sha256(skill.read_bytes()).hexdigest()
+    assert [page["kind"] for page in _json(ctx.run_dir / "page_plan.json")["pages"]] == ["scan_page"] * 2
 
 
 def _pdf_with_pages(path: Path, count: int) -> Path:
@@ -248,26 +259,44 @@ def _pdf_with_pages(path: Path, count: int) -> Path:
     return path
 
 
-def test_recognize_batches_pages_and_merges_them_in_order(ctx, fake, tmp_path, monkeypatch):
-    # Production runs one page per turn; the merge logic is exercised with three.
-    monkeypatch.setattr(recognize, "BATCH_PAGES", 3)
+TEXT_LINE = "Engineering prose preserves the source words on this page."
+
+
+def _use_text_pdf(ctx):
+    """Write genuine text streams; extraction, classification and rendering stay real."""
+    writer = PdfWriter()
+    for _ in range(2):
+        page = writer.add_blank_page(width=360, height=180)
+        font = DictionaryObject({NameObject("/Type"): NameObject("/Font"),
+                                 NameObject("/Subtype"): NameObject("/Type1"),
+                                 NameObject("/BaseFont"): NameObject("/Helvetica")})
+        page[NameObject("/Resources")] = DictionaryObject({NameObject("/Font"): DictionaryObject({
+            NameObject("/F1"): writer._add_object(font)})})
+        stream = DecodedStreamObject()
+        lines = "\n0 -15 Td\n".join(f"({TEXT_LINE}) Tj" for _ in range(5))
+        stream.set_data(f"BT /F1 10 Tf 10 160 Td\n{lines}\nET".encode("ascii"))
+        page[NameObject("/Contents")] = writer._add_object(stream)
+    with ctx.artifacts["source_pdf"].open("wb") as stream:
+        writer.write(stream)
+    return ctx
+
+
+def test_recognize_calls_scan_pages_individually_and_merges_in_order(ctx, fake, tmp_path):
     ctx = replace(ctx, artifacts={"source_pdf": _pdf_with_pages(tmp_path / "seven.pdf", 7)})
     fake.outputs["recognize"] = lambda request: {
         "pages": [{"page_number": page["page_number"], "blocks": []}
                   for page in request.payload["pages"]]}
     output = recognize.run(ctx, {})
     assert output.status == "ok"
-    assert [len(request.images) for request in fake.requests] == [3, 3, 1]
+    assert [len(request.images) for request in fake.requests] == [1] * 7
     assert [request.payload["pages"] for request in fake.requests] == [
-        [{"page_number": number} for number in (1, 2, 3)],
-        [{"page_number": number} for number in (4, 5, 6)],
-        [{"page_number": 7}],
+        [{"page_number": number}] for number in range(1, 8)
     ]
     assert all(request.payload["page_count"] == 7 for request in fake.requests)
     merged = _json(ctx.run_dir / "recognition.json")
     assert [page["page_number"] for page in merged["pages"]] == [1, 2, 3, 4, 5, 6, 7]
-    assert len(fake.providers) == 3 and all(provider.closed for provider in fake.providers)
-    assert len(_stage_record(ctx, "recognize")["model_calls"]) == 3
+    assert len(fake.providers) == 7 and all(provider.closed for provider in fake.providers)
+    assert len(_stage_record(ctx, "recognize")["model_calls"]) == 7
 
 
 def test_recognize_rejects_incomplete_page_coverage(ctx, fake):
@@ -280,16 +309,17 @@ def test_recognize_rejects_incomplete_page_coverage(ctx, fake):
 
 
 @pytest.mark.parametrize("missing", ["prompt", "skill"])
-def test_missing_assets_stop_before_pdf_or_provider(ctx, fake, tmp_path, missing):
+def test_scan_missing_assets_stop_before_provider(ctx, fake, tmp_path, missing):
     empty_dir = tmp_path / "empty-assets"
     empty_dir.mkdir()
     changes = {"prompts_dir" if missing == "prompt" else "skills_dir": empty_dir}
-    context = replace(ctx, settings=replace(ctx.settings, paths=replace(ctx.settings.paths, **changes)), artifacts={"source_pdf": tmp_path / "also-absent.pdf"})
+    context = replace(ctx, settings=replace(ctx.settings, paths=replace(ctx.settings.paths, **changes)))
     with pytest.raises(AssetMissing) as caught:
         recognize.run(context, {})
     assert exit_code_for(caught.value) == 8
     assert not fake.providers and not fake.requests
-    assert not list(context.run_dir.glob("input/page_*.png"))
+    assert len(list(context.run_dir.glob("input/page_*.png"))) == 2
+    assert [page["kind"] for page in _json(context.run_dir / "page_plan.json")["pages"]] == ["scan_page"] * 2
     assert not (context.run_dir / "recognition.json").exists()
     assert not (context.run_dir / "validation.json").exists()
     record = _stage_record(context, "recognize")
@@ -314,8 +344,8 @@ def test_png_count_mismatch_fails_before_model(ctx, fake, monkeypatch):
     assert _stage_record(ctx, "recognize")["status"] == "failed"
 
 
-def test_schema_failure_keeps_evidence_and_stops_next_stage(ctx, fake, monkeypatch):
-    monkeypatch.setattr(recognize, "BATCH_PAGES", 2)
+def test_schema_failure_keeps_evidence_and_stops_next_stage(ctx, fake):
+    ctx = _use_text_pdf(ctx)
     fake.outputs["normalize"] = {"document_id": "MODEL-RAW-MUST-NOT-ENTER-ERROR"}
     with pytest.raises(PipelineError) as caught:
         orchestrator.run_stages(ctx, "all")
@@ -324,31 +354,34 @@ def test_schema_failure_keeps_evidence_and_stops_next_stage(ctx, fake, monkeypat
     assert _json(ctx.run_dir / "document_ir.json") == fake.outputs["normalize"]
     assert not (ctx.run_dir / "evidence.json").exists()
     assert not (ctx.run_dir / "validation.json").exists()
-    assert [request.stage for request in fake.requests] == ["recognize", "normalize"]
+    assert [request.stage for request in fake.requests] == ["normalize"]
     records = _json(ctx.run_dir / "manifest.json")["stages"]
     assert [(row["name"], row["status"]) for row in records] == [("recognize", "ok"), ("normalize", "failed")]
+    assert records[0]["model_calls"] == []
     assert records[1]["artifacts"] == {"document_ir": "document_ir.json"}
     assert any(issue["code"] == "SCHEMA_INVALID" and issue["severity"] == "error" for issue in records[1]["issues"])
     assert all(provider.closed for provider in fake.providers)
 
 
-def test_run_evidence_uses_dependency_order_and_independent_providers(ctx, fake, monkeypatch):
-    monkeypatch.setattr(recognize, "BATCH_PAGES", 2)
+def test_run_evidence_uses_text_recognition_and_independent_providers(ctx, fake):
+    ctx = _use_text_pdf(ctx)
     outputs = orchestrator.run_stages(ctx, "evidence")
     assert [output.name for output in outputs] == ["recognize", "normalize", "evidence"]
-    assert [request.stage for request in fake.requests] == ["recognize", "normalize", "evidence"]
-    assert len(fake.providers) == 3 and all(provider.closed for provider in fake.providers)
+    assert [request.stage for request in fake.requests] == ["normalize", "evidence"]
+    assert len(fake.providers) == 2 and all(provider.closed for provider in fake.providers)
     for output in outputs:
         assert output.status == "ok" and output.duration_ms >= 0
         assert all(path.is_file() for path in output.artifacts.values())
         written = _json(ctx.run_dir / f"{ARTIFACTS[output.name]}.json")
         if output.name == "recognize":
-            # Page-batched, so the expected artifact is derived from the pages asked for.
-            assert written == {"pages": [{"page_number": 1, "blocks": []},
-                                         {"page_number": 2, "blocks": []}]}
+            assert written == {"pages": [
+                {"page_number": number, "blocks": [
+                    {"block_id": f"B{index:03d}", "text": TEXT_LINE, "region": None}
+                    for index in range(1, 6)]}
+                for number in (1, 2)]}
         else:
             assert written == fake.outputs[output.name]
-    for request, input_name in zip(fake.requests[1:], ("recognition", "document_ir")):
+    for request, input_name in zip(fake.requests, ("recognition", "document_ir")):
         assert request.images is None and request.skill is None
         assert request.payload == {input_name: _json(ctx.run_dir / f"{input_name}.json")}
         assert request.json_schema == load_schema(ARTIFACTS[request.stage])
@@ -361,8 +394,12 @@ def test_run_evidence_uses_dependency_order_and_independent_providers(ctx, fake,
         assert set(record) == {"name", "status", "started_at", "ended_at", "duration_ms", "artifacts", "issues", "model_calls"}
         assert record["status"] == "ok" and record["duration_ms"] >= 0
         assert record["started_at"] and record["ended_at"]
-        assert record["model_calls"][0]["attempts"] == 1
-        assert record["model_calls"][0]["prompt_version"] == "0.0.1-stub"
+        if record["name"] == "recognize":
+            assert record["model_calls"] == []
+        else:
+            assert record["model_calls"][0]["attempts"] == 1
+            assert record["model_calls"][0]["prompt_version"] == "0.0.1-stub"
+    assert [page["kind"] for page in _json(ctx.run_dir / "page_plan.json")["pages"]] == ["text_page"] * 2
     assert not (ctx.run_dir / "validation.json").exists()
 
 
@@ -402,11 +439,11 @@ def test_malformed_input_json_fails_before_provider(ctx, fake, module, content):
     assert _stage_record(ctx, module.STAGE_NAME)["status"] == "failed"
 
 
-def test_prompt_directory_replacement_requires_zero_code_changes(ctx, fake, tmp_path, monkeypatch):
-    monkeypatch.setattr(recognize, "BATCH_PAGES", 2)
+def test_prompt_directory_replacement_requires_zero_code_changes(ctx, fake, tmp_path):
     functions_before = tuple(module.run for module in MODULES)
     orchestrator.run_stages(ctx, "evidence")
     original = list(fake.requests)
+    assert [request.stage for request in original] == ["recognize", "recognize", "normalize", "evidence"]
     replacement = tmp_path / "replacement-prompts"
     replacement.mkdir()
     for name in ("vision", "normalize", "evidence"):
@@ -416,7 +453,8 @@ def test_prompt_directory_replacement_requires_zero_code_changes(ctx, fake, tmp_
     outputs = orchestrator.run_stages(context, "evidence")
     assert all(output.status == "ok" for output in outputs)
     assert tuple(module.run for module in MODULES) == functions_before
-    for before, after in zip(original, fake.requests[3:]):
+    assert len(fake.requests) == 2 * len(original)
+    for before, after in zip(original, fake.requests[len(original):]):
         expected_bytes = (replacement / f"{after.prompt_name}.md").read_bytes()
         expected_text = expected_bytes.decode("utf-8")
         assert before.prompt_text != after.prompt_text
@@ -507,7 +545,7 @@ def test_relative_run_directory_records_relative_artifacts(ctx, fake, tmp_path, 
     assert all(output.status == "ok" for output in outputs)
     records = _json(context.run_dir / "manifest.json")["stages"]
     assert [record["artifacts"] for record in records] == [
-        {"recognition": "recognition.json"},
+        {"recognition": "recognition.json", "page_text": "page_text.json", "page_plan": "page_plan.json"},
         {"document_ir": "document_ir.json"},
         {"evidence": "evidence.json"},
     ]

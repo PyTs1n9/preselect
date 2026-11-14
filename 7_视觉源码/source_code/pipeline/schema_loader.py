@@ -24,13 +24,16 @@ SUPPORTED_VERSIONS: dict[str, frozenset[str]] = {
     "recognition": frozenset({"1.0.0"}),
     "document_ir": frozenset({"1.0.0"}),
     "evidence": frozenset({"1.0.1"}),
+    "table": frozenset({"1.0.0"}),
+    "figure": frozenset({"1.0.0"}),
+    "formula": frozenset({"1.0.0"}),
 }
 
 # Schemas sent to the model as structured-output contracts. The provider's
 # strict mode rejects any object that leaves additionalProperties open, keeps a
 # property out of required, or uses oneOf. Checking locally turns a nine-second
 # round trip into an immediate SCHEMA_INVALID with the offending path.
-MODEL_OUTPUT_SCHEMAS: frozenset[str] = frozenset({"recognition", "document_ir", "evidence"})
+MODEL_OUTPUT_SCHEMAS: frozenset[str] = frozenset({"recognition", "document_ir", "evidence", "table", "figure", "formula"})
 
 
 def _strict_issues(node: object, path: str = "") -> list[str]:

@@ -41,6 +41,8 @@
 | A17 | S0 | source_code/schemas/evidence.schema.json、source_code/pipeline/schema_loader.py、source_code/tests/test_engineering_validate.py、source_code/tests/fixtures/engineering/run_*/{evidence,validation}.json、docs/接口冻结清单_A-B.md（事后补登：用户直接指令下开工） | 2026-11-14 11:41:20 +08:00 | 已释放 |
 | A18 | S0 | source_code/schemas/{recognition,document_ir,evidence}.schema.json、source_code/pipeline/{schema_loader,writer}.py、source_code/pipeline/stages/{recognize,write}.py、source_code/prompts/{normalize,evidence}.md、source_code/tests/{test_engineering_stages,test_engineering_validate,test_engineering_write_repair}.py、source_code/tests/fixtures/engineering/**（事后补登：用户「按这个走」后连续实施） | 2026-11-14 14:04:58 +08:00 | 已释放 |
 
+| A19 | S0 | 本卡确认的 17 个白名单文件：pipeline/extract.py、pipeline/stages/recognize.py、pipeline/schema_loader.py；schemas/{table,figure,formula}.schema.json；prompts/{vision,table,figure,formula}.md；tests/test_engineering_{extract,stages,validate}.py（以上均在 source_code/）；docs/接口冻结清单_A-B.md、.parallel/{STATE,CLAIMS}.md、.parallel/handoffs/A19.md。用户已确认实施范围及 vision region 说明对齐既有 schema | 2026-11-14 15:04:50 +08:00 | 已释放 |
+
 ## 契约变更申请
 
 > 需要改 `contracts.py` / `errors.py` 枚举 / `settings.py` 字段 / `config.json` 键 /

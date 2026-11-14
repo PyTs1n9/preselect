@@ -66,6 +66,11 @@ result/runs/<material_id>/<run_id>/
 │   ├── repair_1_request.json
 │   └── repair_1_diff.md
 ├── recognition.json           # 原始识别层，结构不改写
+├── page_text.json             # recognize 必产：逐页清洗后的文本层与字符数
+├── page_plan.json             # recognize 必产：逐页 kind 与 reasons，模型触发决策的唯一依据
+├── tables.json                # recognize 按需产出：通过数字比对的表格页结果
+├── figures.json               # recognize 按需产出：通过数字比对的图页结果
+├── formulas.json              # recognize 按需产出：通过数字比对的公式页结果
 ├── document_ir.json           # 结构归一化层
 ├── evidence.json               # 事实证据层，写作的唯一输入
 ├── draft_en.md                 # 英文草稿：两段式写作第一段的产物
@@ -83,6 +88,12 @@ result/runs/<material_id>/<run_id>/
 - 失败时已产出的中间文件**保留不删**，便于定位；只有 `final.md` 在失败时不得存在。
 - 源 PDF 不进运行目录，只记 sha256。这是提交包排除源 PDF 的前置保证。
 
+**A19 补充（2026-11-14）**：`recognize.PRODUCES` 为 `recognition`、`page_text`、
+`page_plan`；表格、图、公式三个可选产物仅在该 run 有未被拒绝的对应视觉输出时登记到
+artifacts，不作为必产物。三个可选文件均为 `{"pages":[<逐页 schema 合规的模型对象>]}`，
+页号保持来源页号，按页序汇集，不跨页合并表格。`page_plan.reasons` 记录判定指标、
+未知图像面积及数字冲突/拒绝原因。I2 其他阶段与 orchestrator 不变。
+
 ---
 
 ## 3. I3 · Schema 契约
@@ -95,6 +106,9 @@ result/runs/<material_id>/<run_id>/
 | `document_ir.schema.json` | 结构归一化层 | `document_id`、`source{path_name,page_count,sha256}`、`pages`、`blocks`（块结构同识别层） | **1.0.0**（A 落盘） |
 | `evidence.schema.json` | 事实证据层 | `material_id`、`facts`；每条事实含 `fact_id`、`core`、`page_number[]`、`block_id[]`、`quote`、`value`、`value_text`、`unit`、`region` | **1.0.1**（B 定义，A 落盘） |
 | `validation.schema.json` | 校验结果 | `valid`、`issues`、`checks` | **1.1.0**（A 定义，见下） |
+| `table.schema.json` | 表格页视觉输出 | `page_number`、`tables`；表含 `table_id`、`caption`、`header`、`rows`、`bbox` | **1.0.0**（B 定稿，A 原样落盘） |
+| `figure.schema.json` | 图页视觉输出 | `page_number`、`figures`；图含 `figure_id`、`caption`、`description`、`readouts`、`bbox` | **1.0.0**（B 定稿，A 原样落盘） |
+| `formula.schema.json` | 公式页视觉输出 | `page_number`、`formulas`；公式含 `formula_id`、`text`、`symbols`、`bbox` | **1.0.0**（B 定稿，A 原样落盘） |
 
 冻结内容：
 
@@ -109,6 +123,7 @@ result/runs/<material_id>/<run_id>/
 
 | 日期 | Schema | 从 → 到 | 原因 | B 确认 |
 |---|---|---|---|---|
+| 2026-11-14 | `table` / `figure` / `formula` | 新增 → **1.0.0** | A19 按页触发视觉；片段逐字落盘，全部登记既有 strict 预检；表格额外以 Python 检查非空表头和矩形行列 | 字段由 B 于 2026-11-14 定稿，A 落盘，正式双签待补 |
 | 2026-11-13 | `validation` | 1.0.0 → 1.1.0 | 新增 `checks{enabled,skipped}`；A9 因缺 evidence 字段需显式声明未执行项，避免 `valid=true` 被误读为全检通过 | 待确认 |
 | 2026-11-13 | `validation` | 1.1.0 → 1.1.0（不变） | 仅给 `valid` 与 `stats` 四个字段补 `description`，明确 `evidence_count` 是 0/1 对象数、`citations`/`unreferenced_evidence` 在对应检查 skipped 时恒为 0。无结构、无枚举、无必需字段变化，故不升版本；B 若认定为结构变更，再升 1.1.1 并同步 A9 版本断言 | 暂不确认，保持 1.1.0 |
 | 2026-11-14 | `evidence` | 未声明 → **1.0.0** | B1 首次定义字段：顶层 `material_id` + `facts` 数组，事实含 `fact_id`/`core`/`page_number[]`/`block_id[]`/`quote`/`value`/`value_text`/`unit`；`additionalProperties` 由 `true` 收紧为 `false`。片段原样取自 `.parallel/B-FIELD-REQUEST.md` 答复区与 `docs/B1_交付说明.md`，A 未增删字段。已登记 `schema_loader.SUPPORTED_VERSIONS["evidence"]={"1.0.0"}` | B1 答复为字段依据；**正式双签待补**（§12 I3 行仍为 ☐） |
@@ -125,6 +140,11 @@ result/runs/<material_id>/<run_id>/
 **strict 兼容检查**：`schema_loader.MODEL_OUTPUT_SCHEMAS` 在加载时递归校验三条规则
 （每个 object 必须 `additionalProperties:false`、`required` 覆盖全部 properties、禁用 `oneOf`），
 不合规立即 `SCHEMA_INVALID` 退出码 4，不再花一次远端往返才被拒。
+
+**A19 实施确认**：用户于 2026-11-14 确认本卡范围，并允许仅将 `vision` 1.2.0 的
+`region` 说明改为现有 recognition schema 的坐标对象数组
+`[{"x0":x0,"y0":y0,"x1":x1,"y1":y1}]` 或 `null`。既有 recognition schema
+及其版本不变；其余提示词文字与三份新 schema 均按附件原文落盘，不代填 §12 签字。
 
 **当前待办**：三份模型输出 schema 已于 2026-11-14 全部落盘（recognition 1.0.0、
 document_ir 1.0.0、evidence 1.0.1）。剩余问题只有一条，属 A14 范围：
