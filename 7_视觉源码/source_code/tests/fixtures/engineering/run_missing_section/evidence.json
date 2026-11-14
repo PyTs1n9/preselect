@@ -13,7 +13,8 @@
       "quote": "仅用于校验器工程测试的合成文本。",
       "value": null,
       "unit": null,
-      "value_text": "合成文本"
+      "value_text": "合成文本",
+      "region": null
     }
   ]
 }

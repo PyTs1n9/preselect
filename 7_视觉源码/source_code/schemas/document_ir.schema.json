@@ -1,13 +1,63 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "document_ir.schema.json",
+  "schema_version": "1.0.0",
+  "title": "Document IR",
+  "description": "结构归一化层：页面索引 + 可寻址块。块结构与识别层一致，block_id 是 evidence 引用的事实定位目标。strict structured output 要求每个 object 关闭额外属性、required 覆盖全部 properties。",
   "type": "object",
+  "additionalProperties": false,
   "required": ["document_id", "source", "pages", "blocks"],
   "properties": {
     "document_id": {"type": "string", "minLength": 1},
-    "source": {"type": "object"},
-    "pages": {"type": "array"},
-    "blocks": {"type": "array"}
-  },
-  "additionalProperties": true
+    "source": {
+      "description": "溯源信息，与 manifest.input 对齐；未知项写 null，不要空字符串。",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path_name", "page_count", "sha256"],
+      "properties": {
+        "path_name": {"type": ["string", "null"]},
+        "page_count": {"type": ["integer", "null"], "minimum": 1},
+        "sha256": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"}
+      }
+    },
+    "pages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["page_number"],
+        "properties": {
+          "page_number": {"type": "integer", "minimum": 1}
+        }
+      }
+    },
+    "blocks": {
+      "description": "全文档阅读顺序；block_id 与来源页内编号一致，evidence.block_id 指向这里。",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["block_id", "page_number", "text", "region"],
+        "properties": {
+          "block_id": {"type": "string", "pattern": "^B[0-9]{3,}$"},
+          "page_number": {"type": "integer", "minimum": 1},
+          "text": {"type": "string"},
+          "region": {
+            "type": ["array", "null"],
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["x0", "y0", "x1", "y1"],
+              "properties": {
+                "x0": {"type": "number", "minimum": 0, "maximum": 1},
+                "y0": {"type": "number", "minimum": 0, "maximum": 1},
+                "x1": {"type": "number", "minimum": 0, "maximum": 1},
+                "y1": {"type": "number", "minimum": 0, "maximum": 1}
+              }
+            }
+          }
+        }
+      }
+    }
+  }
 }

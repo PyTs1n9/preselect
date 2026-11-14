@@ -20,10 +20,41 @@ SCHEMA_DIALECT = "https://json-schema.org/draft/2020-12/schema"
 # field fragments are still owned by B and lack a schema_version field.
 SUPPORTED_VERSIONS: dict[str, frozenset[str]] = {
     "validation": frozenset({"1.1.0"}),
-    # B1 lands the first declared evidence version; recognition and document_ir
-    # still have no schema_version and therefore no version gate yet.
-    "evidence": frozenset({"1.0.0"}),
+    # B1 lands the first declared version of both model-output schemas.
+    "recognition": frozenset({"1.0.0"}),
+    "document_ir": frozenset({"1.0.0"}),
+    "evidence": frozenset({"1.0.1"}),
 }
+
+# Schemas sent to the model as structured-output contracts. The provider's
+# strict mode rejects any object that leaves additionalProperties open, keeps a
+# property out of required, or uses oneOf. Checking locally turns a nine-second
+# round trip into an immediate SCHEMA_INVALID with the offending path.
+MODEL_OUTPUT_SCHEMAS: frozenset[str] = frozenset({"recognition", "document_ir", "evidence"})
+
+
+def _strict_issues(node: object, path: str = "") -> list[str]:
+    issues: list[str] = []
+    if not isinstance(node, dict):
+        return issues
+    if node.get("type") == "object" or "properties" in node:
+        if node.get("additionalProperties") is not False:
+            issues.append(f"{path or '/'}: object requires additionalProperties=false")
+        properties = node.get("properties")
+        if isinstance(properties, dict):
+            missing = sorted(set(properties) - set(node.get("required") or []))
+            if missing:
+                issues.append(f"{path or '/'}: required must list every property (missing: {', '.join(missing)})")
+    if "oneOf" in node:
+        issues.append(f"{path or '/'}: oneOf is not supported by strict output; use anyOf")
+    for key, child in (node.get("properties") or {}).items():
+        issues.extend(_strict_issues(child, f"{path}/properties/{key}"))
+    if isinstance(node.get("items"), dict):
+        issues.extend(_strict_issues(node["items"], f"{path}/items"))
+    for key in ("anyOf", "allOf"):
+        for index, child in enumerate(node.get(key) or []):
+            issues.extend(_strict_issues(child, f"{path}/{key}/{index}"))
+    return issues
 
 
 def _schema_path(name: str) -> Path:
@@ -73,6 +104,11 @@ def load_schema(name: str) -> dict:
         Draft202012Validator.check_schema(schema)
     except SchemaError:
         raise PipelineError(Code.SCHEMA_INVALID, "Invalid schema definition") from None
+    if name in MODEL_OUTPUT_SCHEMAS:
+        problems = _strict_issues(schema)
+        if problems:
+            raise PipelineError(Code.SCHEMA_INVALID,
+                                "Schema is not strict-output compatible: " + problems[0])
     return schema
 
 

@@ -87,6 +87,8 @@ class FakeProvider:
         self.requests.append(request)
         self.factory.requests.append(request)
         payload = self.factory.outputs[request.stage]
+        if callable(payload):
+            payload = payload(request)
         if isinstance(payload, Exception):
             raise payload
         return ModelResult(
@@ -106,6 +108,11 @@ class FakeProvider:
 class FakeFactory:
     def __init__(self):
         self.outputs = {stage: _json(FIXTURES / "run_ok" / f"{artifact}.json") for stage, artifact in ARTIFACTS.items()}
+        # Recognition is page-batched, so the fake must answer the pages it was
+        # asked for instead of replaying a fixed artifact.
+        self.outputs["recognize"] = lambda request: {
+            "pages": [{"page_number": page["page_number"], "blocks": []}
+                      for page in request.payload["pages"]]}
         self.requests = []
         self.providers = []
         self.options = []
@@ -193,14 +200,15 @@ def test_unversioned_prompt_warns_without_failing(ctx, fake, tmp_path, module):
 
 
 def test_recognize_preserves_output_and_exact_request(ctx, fake):
-    fake.outputs["recognize"] = {"raw_text": "工程测试原文", "pages": []}
+    fake.outputs["recognize"] = {"pages": [{"page_number": 1, "blocks": []},
+                                           {"page_number": 2, "blocks": []}]}
     output = recognize.run(ctx, {})
     path = ctx.run_dir / "recognition.json"
     assert output.name == "recognize" and output.status == "ok"
     assert output.duration_ms == 0.0
     assert output.artifacts == {"recognition": path}
     assert _json(path) == fake.outputs["recognize"]
-    assert list(_json(path)) == ["raw_text", "pages"]
+    assert list(_json(path)) == ["pages"]
     assert path.read_bytes().endswith(b"\n")
     assert not path.read_bytes().startswith(b"\xef\xbb\xbf")
     request, = fake.requests
@@ -228,6 +236,43 @@ def test_recognize_preserves_output_and_exact_request(ctx, fake):
     assert record["artifacts"] == {"recognition": "recognition.json"}
     assert record["model_calls"][0]["prompt_sha256"] == hashlib.sha256((STUB_PROMPTS / "vision.md").read_bytes()).hexdigest()
     assert record["model_calls"][0]["skill_sha256"] == hashlib.sha256(skill.read_bytes()).hexdigest()
+
+
+def _pdf_with_pages(path: Path, count: int) -> Path:
+    writer = PdfWriter()
+    for _ in range(count):
+        writer.add_blank_page(width=72, height=72)
+    with path.open("wb") as stream:
+        writer.write(stream)
+    return path
+
+
+def test_recognize_batches_pages_and_merges_them_in_order(ctx, fake, tmp_path):
+    ctx = replace(ctx, artifacts={"source_pdf": _pdf_with_pages(tmp_path / "seven.pdf", 7)})
+    fake.outputs["recognize"] = lambda request: {
+        "pages": [{"page_number": page["page_number"], "blocks": []}
+                  for page in request.payload["pages"]]}
+    output = recognize.run(ctx, {})
+    assert output.status == "ok"
+    assert [len(request.images) for request in fake.requests] == [5, 2]
+    assert [request.payload["pages"] for request in fake.requests] == [
+        [{"page_number": number} for number in (1, 2, 3, 4, 5)],
+        [{"page_number": number} for number in (6, 7)],
+    ]
+    assert all(request.payload["page_count"] == 7 for request in fake.requests)
+    merged = _json(ctx.run_dir / "recognition.json")
+    assert [page["page_number"] for page in merged["pages"]] == [1, 2, 3, 4, 5, 6, 7]
+    assert len(fake.providers) == 2 and all(provider.closed for provider in fake.providers)
+    assert len(_stage_record(ctx, "recognize")["model_calls"]) == 2
+
+
+def test_recognize_rejects_incomplete_page_coverage(ctx, fake):
+    fake.outputs["recognize"] = {"pages": [{"page_number": 1, "blocks": []}]}
+    with pytest.raises(PipelineError) as caught:
+        recognize.run(ctx, {})
+    assert caught.value.code == Code.MODEL_INVALID_JSON
+    assert exit_code_for(caught.value) == 5
+    assert not (ctx.run_dir / "recognition.json").exists()
 
 
 @pytest.mark.parametrize("missing", ["prompt", "skill"])
@@ -290,7 +335,13 @@ def test_run_evidence_uses_dependency_order_and_independent_providers(ctx, fake)
     for output in outputs:
         assert output.status == "ok" and output.duration_ms >= 0
         assert all(path.is_file() for path in output.artifacts.values())
-        assert _json(ctx.run_dir / f"{ARTIFACTS[output.name]}.json") == fake.outputs[output.name]
+        written = _json(ctx.run_dir / f"{ARTIFACTS[output.name]}.json")
+        if output.name == "recognize":
+            # Page-batched, so the expected artifact is derived from the pages asked for.
+            assert written == {"pages": [{"page_number": 1, "blocks": []},
+                                         {"page_number": 2, "blocks": []}]}
+        else:
+            assert written == fake.outputs[output.name]
     for request, input_name in zip(fake.requests[1:], ("recognition", "document_ir")):
         assert request.images is None and request.skill is None
         assert request.payload == {input_name: _json(ctx.run_dir / f"{input_name}.json")}

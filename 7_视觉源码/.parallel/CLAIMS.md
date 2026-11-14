@@ -39,6 +39,7 @@
 | A1 | S3 | source_code/provider_capabilities.json | 2026-11-14 11:07:57 +08:00 | 已释放 |
 | A1 | S3 | .parallel/handoffs/A1.md | 2026-11-14 11:07:57 +08:00 | 已释放 |
 | A17 | S0 | source_code/schemas/evidence.schema.json、source_code/pipeline/schema_loader.py、source_code/tests/test_engineering_validate.py、source_code/tests/fixtures/engineering/run_*/{evidence,validation}.json、docs/接口冻结清单_A-B.md（事后补登：用户直接指令下开工） | 2026-11-14 11:41:20 +08:00 | 已释放 |
+| A18 | S0 | source_code/schemas/{recognition,document_ir,evidence}.schema.json、source_code/pipeline/{schema_loader,writer}.py、source_code/pipeline/stages/{recognize,write}.py、source_code/prompts/{normalize,evidence}.md、source_code/tests/{test_engineering_stages,test_engineering_validate,test_engineering_write_repair}.py、source_code/tests/fixtures/engineering/**（事后补登：用户「按这个走」后连续实施） | 2026-11-14 14:04:58 +08:00 | 已释放 |
 
 ## 契约变更申请
 

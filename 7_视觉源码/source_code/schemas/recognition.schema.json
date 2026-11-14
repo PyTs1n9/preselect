@@ -1,11 +1,52 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "recognition.schema.json",
+  "schema_version": "1.0.0",
+  "title": "Page recognition",
+  "description": "识别层：逐页 block，逐字原文，归一化区域。字段与 skills/pdf-vision/SKILL.md v1.1.0 一致。strict structured output 要求每个 object 关闭额外属性、required 覆盖全部 properties。",
   "type": "object",
+  "additionalProperties": false,
   "required": ["pages"],
   "properties": {
-    "pages": {"type": "array", "items": {"type": "object"}},
-    "raw_text": {"type": "string"}
-  },
-  "additionalProperties": true
+    "pages": {
+      "description": "按 page_number 升序；页数必须与输入页数一致（由代码校验覆盖性）。",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["page_number", "blocks"],
+        "properties": {
+          "page_number": {"type": "integer", "minimum": 1},
+          "blocks": {
+            "description": "阅读顺序；页内 block_id 从 B001 连续。",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["block_id", "text", "region"],
+              "properties": {
+                "block_id": {"type": "string", "pattern": "^B[0-9]{3,}$"},
+                "text": {"type": "string"},
+                "region": {
+                  "description": "归一化 0–1 区域数组，原点左上；无法定位时为 null。",
+                  "type": ["array", "null"],
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["x0", "y0", "x1", "y1"],
+                    "properties": {
+                      "x0": {"type": "number", "minimum": 0, "maximum": 1},
+                      "y0": {"type": "number", "minimum": 0, "maximum": 1},
+                      "x1": {"type": "number", "minimum": 0, "maximum": 1},
+                      "y1": {"type": "number", "minimum": 0, "maximum": 1}
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
 }

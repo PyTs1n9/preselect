@@ -1,9 +1,9 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "evidence.schema.json",
-  "schema_version": "1.0.0",
+  "schema_version": "1.0.1",
   "title": "Evidence facts",
-  "description": "B1 字段定义的落盘版本：顶层 facts 数组、连续 fact_id、显式 core，位置字段数组化。字段名与约束原样取自 B 的答复，A 未增删。",
+  "description": "B1 字段定义的落盘版本。1.0.1 仅为 strict structured output 兼容而调整：可选字段改为 required + null、oneOf 改为 anyOf，未新增或删除字段。",
   "type": "object",
   "required": ["material_id", "facts"],
   "properties": {
@@ -18,7 +18,7 @@
       "minItems": 1,
       "items": {
         "type": "object",
-        "required": ["fact_id", "core", "page_number", "block_id", "quote", "value", "unit"],
+        "required": ["fact_id", "core", "page_number", "block_id", "quote", "value", "value_text", "unit", "region"],
         "properties": {
           "fact_id": {
             "description": "稳定标识，形如 F001；单份 evidence 内唯一且从 F001 连续。",
@@ -44,9 +44,19 @@
             "items": {"type": "string", "minLength": 1}
           },
           "region": {
-            "description": "页内区域，按页顺序可选填写。",
-            "type": "array",
-            "items": {"type": "object"}
+            "description": "页内区域数组，按 page_number 顺序；无法定位时为 null。",
+            "type": ["array", "null"],
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["x0", "y0", "x1", "y1"],
+              "properties": {
+                "x0": {"type": "number", "minimum": 0, "maximum": 1},
+                "y0": {"type": "number", "minimum": 0, "maximum": 1},
+                "x1": {"type": "number", "minimum": 0, "maximum": 1},
+                "y1": {"type": "number", "minimum": 0, "maximum": 1}
+              }
+            }
           },
           "quote": {
             "description": "原文摘录，必须逐字来自页面文本。",
@@ -55,7 +65,7 @@
           },
           "value": {
             "description": "数值：单值 number、多值 number 数组、区间 {min,max}，无数字事实为 null。",
-            "oneOf": [
+            "anyOf": [
               {"type": "number"},
               {"type": "array", "minItems": 1, "items": {"type": "number"}},
               {
@@ -68,12 +78,12 @@
             ]
           },
           "value_text": {
-            "description": "原文中的数值表述，保留 80–90%、3 组 等原始写法。",
-            "type": "string"
+            "description": "原文中的数值表述，保留 80–90%、3 组 等原始写法；无数值表述时为 null。",
+            "type": ["string", "null"]
           },
           "unit": {
             "description": "单位：单值字符串、与多值对应的字符串数组，无单位为 null；复合单位完整保留。",
-            "oneOf": [
+            "anyOf": [
               {"type": "string"},
               {"type": "array", "minItems": 1, "items": {"type": "string"}},
               {"type": "null"}

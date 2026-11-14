@@ -7,7 +7,7 @@ from ..writer import write_draft
 
 STAGE_NAME = "write"
 REQUIRES = ["evidence"]
-PRODUCES = ["draft"]
+PRODUCES = ["draft", "draft_en"]
 
 
 def run(ctx: RunContext, inputs: dict[str, Path]) -> StageResult:

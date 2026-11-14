@@ -87,8 +87,13 @@ class FakeProvider:
                 raise text
             parsed = None
         else:
-            artifact = {"recognize": "recognition", "normalize": "document_ir", "evidence": "evidence"}[request.stage]
-            parsed = _json(FIXTURES / "run_ok" / f"{artifact}.json")
+            if request.stage == "recognize":
+                # Page-batched: answer exactly the pages this request carried.
+                parsed = {"pages": [{"page_number": page["page_number"], "blocks": []}
+                                    for page in request.payload["pages"]]}
+            else:
+                artifact = {"normalize": "document_ir", "evidence": "evidence"}[request.stage]
+                parsed = _json(FIXTURES / "run_ok" / f"{artifact}.json")
             text = json.dumps(parsed, ensure_ascii=False)
         return ModelResult(text=text, parsed=parsed, raw={}, usage={}, truncated=False,
                            latency_ms=1.0, attempts=1,
@@ -156,17 +161,21 @@ def test_writer_reads_only_evidence_and_writes_plain_lf(ctx, fake):
     fake.write_text = LONG.replace("\n", "\r\n")
     result = writer.write_draft(source, ctx)
     assert list(inspect.signature(writer._draft_payload).parameters) == ["evidence"]
-    request, = fake.requests
-    assert request.payload == {"evidence": _json(source)}
-    assert not {"recognition", "source_pdf"}.intersection(request.payload)
-    assert request.images is None and request.skill is None and request.json_schema is None
-    assert request.prompt_name == "writer"
-    assert request.prompt_text == (STUB_PROMPTS / "writer.md").read_text(encoding="utf-8")
+    draft_request, translate_request = fake.requests
+    assert draft_request.payload == {"evidence": _json(source)}
+    assert not {"recognition", "source_pdf"}.intersection(draft_request.payload)
+    assert draft_request.images is None and draft_request.skill is None and draft_request.json_schema is None
+    assert draft_request.prompt_name == "writer"
+    assert draft_request.prompt_text == (STUB_PROMPTS / "writer.md").read_text(encoding="utf-8")
+    assert translate_request.payload == {"draft_en": LONG}
+    assert translate_request.prompt_name == "translate"
+    assert translate_request.prompt_text == (STUB_PROMPTS / "translate.md").read_text(encoding="utf-8")
     assert result.name == "write" and result.status == "ok"
-    assert result.artifacts == {"draft": ctx.run_dir / "draft.md"}
+    assert result.artifacts == {"draft_en": ctx.run_dir / "draft_en.md", "draft": ctx.run_dir / "draft.md"}
+    assert result.artifacts["draft_en"].read_bytes() == LONG.encode("utf-8")
     assert result.artifacts["draft"].read_bytes() == LONG.encode("utf-8")
     assert not (ctx.run_dir / "recognition.json").exists()
-    assert len(fake.providers) == 1 and fake.providers[0].closed
+    assert len(fake.providers) == 2 and all(provider.closed for provider in fake.providers)
     assert len(_json(ctx.run_dir / "manifest.json")["stages"]) == 1
 
 
@@ -184,11 +193,29 @@ def test_writer_missing_or_blank_prompt_fails_before_provider(ctx, fake, tmp_pat
     assert _record(ctx, "write")["status"] == "failed"
 
 
+def test_translate_prompt_missing_stops_after_english_draft(ctx, fake, tmp_path):
+    prompts = tmp_path / "prompts"
+    prompts.mkdir()
+    (prompts / "writer.md").write_text((STUB_PROMPTS / "writer.md").read_text(encoding="utf-8"), encoding="utf-8")
+    ctx = replace(ctx, settings=replace(ctx.settings, paths=replace(ctx.settings.paths, prompts_dir=prompts)))
+    ctx.run_dir.mkdir(parents=True, exist_ok=True)
+    source = ctx.run_dir / "evidence.json"
+    source.write_bytes((FIXTURES / "run_ok" / "evidence.json").read_bytes())
+    with pytest.raises(PipelineError) as caught:
+        writer.write_draft(source, ctx)
+    assert caught.value.code == Code.ASSET_MISSING and exit_code_for(caught.value) == 8
+    assert (ctx.run_dir / "draft_en.md").is_file()
+    assert not (ctx.run_dir / "draft.md").exists()
+    assert len(fake.providers) == 1 and fake.providers[0].closed
+    assert _record(ctx, "write")["status"] == "failed"
+
+
 def test_unversioned_writer_warns_without_failing(ctx, fake, tmp_path):
     _prepare(ctx, SHORT)
     prompts = tmp_path / "prompts"
     prompts.mkdir()
     (prompts / "writer.md").write_text("Engineering test prompt.\n", encoding="utf-8")
+    (prompts / "translate.md").write_text((STUB_PROMPTS / "translate.md").read_text(encoding="utf-8"), encoding="utf-8")
     ctx = replace(ctx, settings=replace(ctx.settings, paths=replace(ctx.settings.paths, prompts_dir=prompts)))
     result = writer.write_draft(ctx.run_dir / "evidence.json", ctx)
     assert result.status == "ok"
@@ -306,8 +333,8 @@ def test_all_five_stages_execute_in_order_and_close_providers(ctx, fake, rounds,
     assert [output.name for output in outputs] == names
     assert all(output.status == "ok" for output in outputs)
     assert all(path.is_file() for output in outputs for path in output.artifacts.values())
-    assert [request.stage for request in fake.requests] == names[:4] + ["repair"] * rounds
-    assert len(fake.providers) == 4 + rounds and all(p.closed for p in fake.providers)
+    assert [request.stage for request in fake.requests] == ["recognize", "normalize", "evidence", "write", "write"] + ["repair"] * rounds
+    assert len(fake.providers) == 5 + rounds and all(p.closed for p in fake.providers)
     manifest = _json(ctx.run_dir / "manifest.json")
     assert [stage["name"] for stage in manifest["stages"]] == names
     assert all(stage["status"] == "ok" for stage in manifest["stages"])

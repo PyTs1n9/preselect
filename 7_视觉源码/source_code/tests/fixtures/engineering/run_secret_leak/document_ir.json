@@ -1,6 +1,10 @@
 {
   "document_id": "engineering-fixture",
-  "source": {},
+  "source": {
+    "path_name": null,
+    "page_count": null,
+    "sha256": null
+  },
   "pages": [],
   "blocks": []
 }

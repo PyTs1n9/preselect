@@ -204,12 +204,17 @@ def test_relative_paths_and_web_links_are_allowed():
 def _make_run(run_dir):
     artifacts = {
         "recognition.json": {"pages": []},
-        "document_ir.json": {"document_id": "engineering", "source": {}, "pages": [], "blocks": []},
+        "document_ir.json": {
+            "document_id": "engineering",
+            "source": {"path_name": None, "page_count": None, "sha256": None},
+            "pages": [], "blocks": [],
+        },
         "evidence.json": {
             "material_id": "engineering",
             "facts": [{
                 "fact_id": "F001", "core": True, "page_number": [1], "block_id": ["B001"],
-                "quote": "工程文本", "value": None, "unit": None,
+                "quote": "工程文本", "value": None, "unit": None, "value_text": None,
+                "region": None,
             }],
         },
     }
@@ -391,3 +396,26 @@ def test_report_selfcheck_rejects_invalid_validity_without_replacing_output(tmp_
     assert caught.value.code == Code.SCHEMA_INVALID
     assert (tmp_path / "validation.json").read_bytes() == original
     assert list(tmp_path.glob(".validation-*.tmp")) == []
+
+
+def test_strict_output_rules_are_checked_locally():
+    """The provider rejects non-strict schemas; the loader must reject them first."""
+
+    from pipeline.schema_loader import _strict_issues
+
+    compliant = {"type": "object", "additionalProperties": False, "required": ["a"],
+                 "properties": {"a": {"type": "string"}}}
+    assert _strict_issues(compliant) == []
+    assert any("additionalProperties" in issue
+               for issue in _strict_issues({"type": "object", "properties": {"a": {"type": "string"}}}))
+    assert any("missing: b" in issue
+               for issue in _strict_issues({"type": "object", "additionalProperties": False,
+                                            "required": ["a"], "properties": {"a": {}, "b": {}}}))
+    assert any("oneOf" in issue for issue in _strict_issues({"oneOf": [{"type": "string"}]}))
+
+
+@pytest.mark.parametrize("name", ["recognition", "document_ir", "evidence"])
+def test_model_output_schemas_are_strict_compatible(name):
+    from pipeline.schema_loader import _strict_issues, load_schema
+
+    assert _strict_issues(load_schema(name)) == []

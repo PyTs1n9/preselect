@@ -68,7 +68,8 @@ result/runs/<material_id>/<run_id>/
 ├── recognition.json           # 原始识别层，结构不改写
 ├── document_ir.json           # 结构归一化层
 ├── evidence.json               # 事实证据层，写作的唯一输入
-├── draft.md                    # 写作初稿
+├── draft_en.md                 # 英文草稿：两段式写作第一段的产物
+├── draft.md                    # 写作初稿（中文译写）
 ├── validation.json             # I6
 ├── final.md                    # 修复通过后的终稿；失败时不存在
 ├── logs/pipeline.log
@@ -90,9 +91,9 @@ result/runs/<material_id>/<run_id>/
 
 | Schema | 对应层 | 必须存在的顶层键 | 当前版本 |
 |---|---|---|---|
-| `recognition.schema.json` | 原始识别层 | `pages`，每页含 `page_number` 与块列表 | 未声明（待 B 补） |
-| `document_ir.schema.json` | 结构归一化层 | `document_id`、`source`、`pages`、`blocks` | 未声明（待 B 补） |
-| `evidence.schema.json` | 事实证据层 | `material_id`、`facts`；每条事实含 `fact_id`、`core`、`page_number[]`、`block_id[]`、`quote`、`value`、`unit` | **1.0.0**（B 定义，A 落盘） |
+| `recognition.schema.json` | 原始识别层 | `pages`；每页含 `page_number` 与 `blocks`，每块含 `block_id`、`text`、`region`（归一化 0–1，可 null） | **1.0.0**（A 落盘，字段依 SKILL.md v1.1.0） |
+| `document_ir.schema.json` | 结构归一化层 | `document_id`、`source{path_name,page_count,sha256}`、`pages`、`blocks`（块结构同识别层） | **1.0.0**（A 落盘） |
+| `evidence.schema.json` | 事实证据层 | `material_id`、`facts`；每条事实含 `fact_id`、`core`、`page_number[]`、`block_id[]`、`quote`、`value`、`value_text`、`unit`、`region` | **1.0.1**（B 定义，A 落盘） |
 | `validation.schema.json` | 校验结果 | `valid`、`issues`、`checks` | **1.1.0**（A 定义，见下） |
 
 冻结内容：
@@ -117,13 +118,19 @@ result/runs/<material_id>/<run_id>/
 的内联证据同步迁移。`stats.evidence_count` 口径不变（schema 合规的证据对象数，恒 0/1），
 因此 `validation` 不升版本。引用数、未引用数与 `checks.skipped` 仍由 A14 负责。
 
-**当前待办**：`evidence` 已于 2026-11-14 落盘（1.0.0）。`recognition` / `document_ir` 的
-`properties` 仍是空壳（`items: {"type":"object"}`），无法产生有意义的校验。
-其中 `document_ir` 缺失最要紧：`evidence.facts[].block_id` 按约定指向
-`document_ir.blocks[].block_id`，但 IR 没有声明块结构，A 只能校验"block_id 是非空字符串"，
-无法校验"该块真实存在于 IR"，引用链因此有一环无法自证。B 需在 A10 真跑前给出
-`document_ir.blocks` 的字段片段（`block_id`、`page_number`、`text`、顺序）与
-`recognition.pages` 的 item 结构，清单见 `.parallel/B-FIELD-REQUEST.md`。
+| 2026-11-14 | `recognition` | 未声明 → **1.0.0** | 字段依 `skills/pdf-vision/SKILL.md` v1.1.0：`pages[].blocks[]` 含 `block_id`/`text`/`region`；为通过供应商 strict structured output，每个 object 关闭 `additionalProperties`、`required` 覆盖全部 properties，`region` 为归一化 0–1 且可 `null` | B 依据为 SKILL.md，正式双签待补 |
+| 2026-11-14 | `document_ir` | 未声明 → **1.0.0** | 块结构与识别层对齐，`source` 定为 `path_name`/`page_count`/`sha256` 三键可空；`A` 不新增业务字段 | B 依据为 SKILL.md，正式双签待补 |
+| 2026-11-14 | `evidence` | 1.0.0 → **1.0.1** | 仅为 strict 兼容：`value_text`/`region` 由可选改为 required + null，`oneOf` 改 `anyOf`。未新增、未删除字段，语义与 B1 答复一致 | 兼容性调整，字段语义不变 |
+
+**strict 兼容检查**：`schema_loader.MODEL_OUTPUT_SCHEMAS` 在加载时递归校验三条规则
+（每个 object 必须 `additionalProperties:false`、`required` 覆盖全部 properties、禁用 `oneOf`），
+不合规立即 `SCHEMA_INVALID` 退出码 4，不再花一次远端往返才被拒。
+
+**当前待办**：三份模型输出 schema 已于 2026-11-14 全部落盘（recognition 1.0.0、
+document_ir 1.0.0、evidence 1.0.1）。剩余问题只有一条，属 A14 范围：
+`evidence.facts[].block_id` 与 `document_ir.blocks[].block_id` 的**交叉存在性校验**尚未实现，
+当前只能校验"是非空字符串"，无法断言"该块真实存在于 IR"。A14 落地时须同时补
+`block_id` 集合比对，否则引用链仍有一环无法自证。
 
 ---
 
@@ -139,7 +146,8 @@ result/runs/<material_id>/<run_id>/
 | 视觉提示词 | `source_code/prompts/vision.md` | 读全文作为 `TextInput`，sha256 入 manifest |
 | 归一化提示词 | `source_code/prompts/normalize.md` | 同上 |
 | 证据提示词 | `source_code/prompts/evidence.md` | 同上 |
-| 写作提示词 | `source_code/prompts/writer.md` | 同上 |
+| 写作提示词 | `source_code/prompts/writer.md` | 读全文作为 `TextInput`，sha256 入 manifest；产出英文草稿 `draft_en.md` |
+| 翻译提示词 | `source_code/prompts/translate.md` | 读全文作为 `TextInput`，sha256 入 manifest；只吃 `draft_en`，产出中文 `draft.md` |
 | 修复提示词 | `source_code/prompts/repair.md` | 同上 |
 | 质量夹具 | `source_code/fixtures/quality/<case>/` | 只读消费，结构见 I10 |
 
