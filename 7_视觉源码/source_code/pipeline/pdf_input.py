@@ -21,7 +21,9 @@ from .settings import load_settings
 
 
 _MAX_FILE_SIZE = 20 * 1024 * 1024
-_MAX_PAGE_COUNT = 50
+# 50 was an early assumption; the real materials reach 50 pages exactly, so the
+# ceiling moved to 100 to leave headroom without permitting unbounded input.
+_MAX_PAGE_COUNT = 100
 _HASH_CHUNK_SIZE = 1024 * 1024
 
 
