@@ -1,0 +1,21 @@
+{
+  "document_id": "offline-demo",
+  "source": {
+    "path_name": null,
+    "page_count": null,
+    "sha256": null
+  },
+  "pages": [
+    {
+      "page_number": 1
+    }
+  ],
+  "blocks": [
+    {
+      "block_id": "B001",
+      "page_number": 1,
+      "text": "仅用于离线回放的合成文本。",
+      "region": null
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "page_number": {{page_number}},
+  "tables": [
+    {
+      "table_id": "T01",
+      "caption": "回放示意表",
+      "header": [
+        "项目",
+        "说明"
+      ],
+      "rows": [
+        [
+          "回放样本",
+          "仅验证链路"
+        ]
+      ],
+      "bbox": null
+    }
+  ]
+}

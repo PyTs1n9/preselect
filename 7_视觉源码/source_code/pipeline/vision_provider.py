@@ -1,7 +1,7 @@
 """Vision provider abstraction and provider selection.
 
-Only one provider exists by design: the Codex SDK. The protocol stays here so
-stages depend on an interface rather than the concrete adapter.
+Production uses the Codex SDK; offline demos use local replay fixtures.
+Stages depend on the protocol rather than either concrete adapter.
 """
 
 from __future__ import annotations
@@ -19,6 +19,26 @@ class VisionProvider(Protocol):
 
 
 def get_provider(name: str, model: str | None = None, **options: Any) -> VisionProvider:
+    if name == "replay":
+        import json
+        from pathlib import Path
+
+        from .errors import PipelineError
+        from .replay_provider import ReplayProvider
+
+        settings = options.get("settings")
+        if settings is None:
+            raise ConfigError("Replay provider requires settings")
+        material_id = None
+        if options.get("run_dir") is not None:
+            try:
+                manifest = json.loads((Path(options["run_dir"]) / "manifest.json").read_text(encoding="utf-8"))
+                material_id = manifest["material_id"]
+            except (OSError, UnicodeError, ValueError, KeyError, TypeError):
+                raise PipelineError("STAGE_FAILED", "Replay run material_id cannot be read") from None
+            if not isinstance(material_id, str) or not material_id:
+                raise PipelineError("STAGE_FAILED", "Replay run material_id is invalid")
+        return ReplayProvider(settings.paths.fixtures_dir, material_id=material_id)
     if name in {"openai_codex", "codex"}:
         from .codex_adapter import CodexAdapter
 

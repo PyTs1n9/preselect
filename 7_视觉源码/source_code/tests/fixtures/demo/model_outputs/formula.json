@@ -1,0 +1,16 @@
+{
+  "page_number": {{page_number}},
+  "formulas": [
+    {
+      "formula_id": "E01",
+      "text": "回放符号示例",
+      "symbols": [
+        {
+          "symbol": "x",
+          "meaning": "仅作工程占位"
+        }
+      ],
+      "bbox": null
+    }
+  ]
+}

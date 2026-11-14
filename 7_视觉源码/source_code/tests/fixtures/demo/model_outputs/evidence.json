@@ -1,0 +1,20 @@
+{
+  "material_id": "{{material_id}}",
+  "facts": [
+    {
+      "fact_id": "F001",
+      "core": true,
+      "page_number": [
+        1
+      ],
+      "block_id": [
+        "B001"
+      ],
+      "quote": "仅用于离线回放的合成文本。",
+      "value": null,
+      "unit": null,
+      "value_text": null,
+      "region": null
+    }
+  ]
+}
