@@ -20,3 +20,8 @@
 **/source_code/result/
 /workflow-benchmark/
 **/作品.zip
+
+# 7_视觉源码 的接口冻结清单、卡级看板与交接文档是可追责记录（§12 需填冻结 commit），
+# 必须进版本控制；其余项目的 docs/ 仍按上面的规则留在本地。
+!/7_视觉源码/docs/
+!/7_视觉源码/docs/**
