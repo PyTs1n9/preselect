@@ -18,10 +18,10 @@
 | W0 | S0 | source_code/pipeline/orchestrator.py | 2026-11-13 | 已释放 |
 | W0 | S0 | source_code/main.py | 2026-11-13 | 已释放 |
 
-| A6+A7 | S1 | source_code/pipeline/pdf_input.py | 2026-11-13 20:48 | 占用中 |
+| A6+A7 | S1 | source_code/pipeline/pdf_input.py | 2026-11-13 20:48 | 已释放（对账：缺交接/缺证据） |
 | A6+A7 | S1 | source_code/pipeline/codex_adapter.py | 2026-11-13 20:48 | 已释放（A14b 回收，超 40 分钟未交付） |
-| A6+A7 | S1 | source_code/pipeline/vision_provider.py | 2026-11-13 20:48 | 占用中 |
-| A6+A7 | S1 | source_code/tests/test_engineering_input.py | 2026-11-13 20:48 | 占用中 |
+| A6+A7 | S1 | source_code/pipeline/vision_provider.py | 2026-11-13 20:48 | 已释放（对账：缺交接/缺证据） |
+| A6+A7 | S1 | source_code/tests/test_engineering_input.py | 2026-11-13 20:48 | 已释放（对账：缺交接/缺证据） |
 | A8 | S3 | source_code/pipeline/prompt_loader.py、source_code/pipeline/stages/{_shared,recognize,normalize,evidence}.py、source_code/tests/test_engineering_stages.py、source_code/tests/test_engineering_fixture_snapshot.py（跨卡，仅改 1 行参数化）、source_code/tests/fixtures/engineering/stub_prompts/{vision,normalize,evidence}.md | 2026-11-14 00:30（事后补登：A8 未在开工前登记） | 已释放 |
 | A11 | S3 | source_code/pipeline/writer.py（批 1） | 2026-11-14 08:49:49 +08:00 | 已释放 |
 | A11 | S3 | source_code/pipeline/repair.py（批 1） | 2026-11-14 08:49:49 +08:00 | 已释放 |
@@ -48,6 +48,21 @@
 | A14b | S0 | source_code/tests/test_engineering_faults.py、source_code/pipeline/codex_adapter.py（仅 turn.run 异常路径失败审计）、docs/fault-injection.md、.parallel/{STATE,CLAIMS}.md、.parallel/handoffs/A14b.md；按用户裁决回收 adapter 旧占用，其余 A6+A7 文件不动 | 2026-11-14 16:31:56 +08:00 | 已释放 |
 | A15-2 | S0 | source_code/pipeline/packaging.py、source_code/pipeline/validate.py、source_code/tests/test_engineering_package.py、.parallel/{STATE,CLAIMS}.md、.parallel/handoffs/A15-2.md；扫描包内 manifest.json/validation.json 的密钥形态，复用 scan_credential_shaped | 2026-11-14 17:40:00 +08:00 | 已释放 |
 
+## 2026-11-14 看板对账登记
+
+以下记录只登记历史提交与证据缺口，不宣称新增实现；缺少独立交接文件的卡在 STATE 中保持 `blocked`。
+
+| 卡号 | 提交依据 | 交接依据 | 状态 |
+|---|---|---|---|
+| A20 | 1bbfce0 | handoffs/A20.md | 已释放 |
+| A21 | eafb5cb | 缺 handoffs/A21.md | 已释放；STATE=blocked |
+| A22 | 0b6e4f1 | 缺 handoffs/A22.md | 已释放；STATE=blocked |
+| M1/M1-fix | 3dec9cf、3b325d1 | 缺独立 handoff | 已释放；STATE=blocked |
+| M2 | b24a06c | 缺独立 handoff | 已释放；STATE=blocked |
+| M3 | 307baf3 | 缺独立 handoff | 已释放；STATE=blocked |
+| M4 | ea2cd8b | 缺独立 handoff | 已释放；STATE=blocked |
+| M5 | f72e6ba | 缺独立 handoff | 已释放；STATE=blocked |
+
 ## 契约变更申请
 
 > 需要改 `contracts.py` / `errors.py` 枚举 / `settings.py` 字段 / `config.json` 键 /
@@ -57,3 +72,4 @@
 |---|---|---|---|---|
 | S0 | W0 共享内核 | 按本次用户明确指令完成 W0，包括 validation 的 issues 对齐 | 用户再次明确“你来采用最优解修复W0范围” | 本次 W0 执行授权；不代表 A/B 已双签，不代签；其余业务 schema 不改 |
 | A15 | S3 | I2 package_report.json 位置 | D1 放在 ZIP 同目录，与 I2 运行目录清单冲突；记录契约变更申请 | 待 S0 裁决 |
+
