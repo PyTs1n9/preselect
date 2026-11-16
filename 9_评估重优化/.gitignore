@@ -1,0 +1,8 @@
+# 本机凭证与运行痕迹，不得进入版本库或提交包
+config.toml
+*.local.toml
+作品.zip
+__pycache__/
+/api_run/
+/run_logs/
+/.workbuddy/

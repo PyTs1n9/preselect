@@ -1,0 +1,25 @@
+# 模型服务配置示例（不含任何真实凭证，可随提交包分发）
+# 复制为 config.toml 后填入自己的服务地址与令牌：
+#   cp config.example.toml config.toml
+# 再运行：
+#   python main.py --credentials-file ../config.toml --input-dir <PDF目录> \
+#       --output-dir <文章目录> --log-dir <日志目录>
+
+model_provider = "custom"
+model = "<模型名称，例如 gpt-6.1-sol>"
+
+# 若服务端不支持 Responses 存储，设为 true 以关闭 store
+disable_response_storage = true
+
+[model_providers.custom]
+name = "<服务商名称>"
+# Chat Completions 兼容接口填到 .../v1 即可；本程序会补 /chat/completions 或 /responses
+base_url = "https://<你的服务地址>"
+# 可选值：responses 或 chat_completions
+wire_api = "responses"
+requires_openai_auth = false
+experimental_bearer_token = "<在此填入你的 API Key>"
+
+# 如服务商要求额外请求头，取消注释并按官方文档填写
+# [model_providers.custom.http_headers]
+# X-Example-Header = "<值>"
