@@ -1,0 +1,65 @@
+{
+  "reviewer": "内部人工复核（非独立评委）",
+  "review_date": "2026-11-13",
+  "article_sha256": {
+    "AI-01": "db32da578c39f8f04037972e99edca434dd6a16fff3014783e09adea348cebff",
+    "BIO-02": "4d1c3a994a8c5b1e9fa031fc36088efee7c89239772390e78bca0d5d011928d0",
+    "IND-03": "0a98268b8e737b340f62b2d36e37115a83917f928aa4a80c9f4f1fb50b34c3e8",
+    "MED-04": "773de0e2d006314ea88a8020ce4352a8d21e5d6e38aed416c0d8a0e93354a0cb"
+  },
+  "scores": {
+    "scientific_accuracy": 14,
+    "popular_expression": 17,
+    "content_completeness": 18,
+    "source_quality": 24
+  },
+  "score_notes": {
+    "scientific_accuracy": "27张证据卡定位到原文页；已核对高风险数字、临床阶段、综述范围与观点性表述。尚未由领域专家逐句复核。",
+    "popular_expression": "四篇都有具体场景和类比边界；未做普通读者盲测，少数段落仍偏密。",
+    "content_completeness": "全部必需证据卡映射到文章；短文无法覆盖综述的所有子主题，已保留主要机制、结果和局限。",
+    "source_quality": "来源校验、两次模型调用编排、运行日志、硬检查和四项测试已完成；真实API调用、文章由程序生成及人工修订差异均待验证。"
+  },
+  "coverage": {
+    "AI-01": {
+      "AI1": {"status": "covered", "article_excerpt": "这篇研究聚焦的是“编造”"},
+      "AI2": {"status": "covered", "article_excerpt": "对同一问题采样多个回答，再按含义分组"},
+      "AI3": {"status": "covered", "article_excerpt": "平均 AUROC 为 0.790"},
+      "AI4": {"status": "covered", "article_excerpt": "先把长文拆成单条事实陈述"},
+      "AI5": {"status": "covered", "article_excerpt": "模型如果一直自信地重复同一个错误"},
+      "AI6": {"status": "covered", "article_excerpt": "只利用多次生成结果的离散近似"}
+    },
+    "BIO-02": {
+      "BIO1": {"status": "covered", "article_excerpt": "非复制型线性 mRNA 和自扩增 mRNA 两类主要形式"},
+      "BIO2": {"status": "covered", "article_excerpt": "会影响它的稳定性、蛋白质表达和炎症反应"},
+      "BIO3": {"status": "covered", "article_excerpt": "脂质纳米颗粒由辅助脂质、胆固醇"},
+      "BIO4": {"status": "covered", "article_excerpt": "人体接种可能出现发热、疲乏、头痛"},
+      "BIO5": {"status": "covered", "article_excerpt": "通常难以在上呼吸道建立强黏膜免疫"},
+      "BIO6": {"status": "covered", "article_excerpt": "冷链、价格和区域产能曾影响"},
+      "BIO7": {"status": "covered", "article_excerpt": "下一代疫苗仍须同时改善免疫效果"},
+      "BIO8": {"status": "covered", "article_excerpt": "ARCT-154 在日本获批"},
+      "BIO9": {"status": "covered", "article_excerpt": "先从高峰回落，随后可趋于稳定"}
+    },
+    "IND-03": {
+      "IND1": {"status": "covered", "article_excerpt": "数字孪生强调双向流动"},
+      "IND2": {"status": "covered", "article_excerpt": "模型建好后仍需一致性测试"},
+      "IND3": {"status": "covered", "article_excerpt": "84 篇相关文献"},
+      "IND4": {"status": "covered", "article_excerpt": "按制造、建筑、交通以及技术与范式四类"},
+      "IND5": {"status": "covered", "article_excerpt": "不同厂商设备的数据格式可能不一致"},
+      "IND6": {"status": "covered", "article_excerpt": "过度监测"}
+    },
+    "MED-04": {
+      "MED1": {"status": "covered", "article_excerpt": "通用医疗 AI（UMAI）和通用健康 AI（UHAI）"},
+      "MED2": {"status": "covered", "article_excerpt": "同理心、直觉"},
+      "MED3": {"status": "covered", "article_excerpt": "关注健康维护和疾病预防"},
+      "MED4": {"status": "covered", "article_excerpt": "可穿戴设备等非临床信息"},
+      "MED5": {"status": "covered", "article_excerpt": "临床采纳和社会接受也仍有挑战"},
+      "MED6": {"status": "covered", "article_excerpt": "不同专长的智能体协作"}
+    }
+  },
+  "limitations": [
+    "本分数为同一作者的内部自评，不是独立领域专家或赛事评委结果。",
+    "四篇文章目前为人工编审稿；模型服务商、模型名和密钥尚待提供，程序尚未以真实API产出最终稿。",
+    "尚未打包ZIP，格式项预留1分。",
+    "覆盖映射中的文章片段存在只能证明文本出现、不能单独证明语义正确；语义判断来自人工复核。"
+  ]
+}

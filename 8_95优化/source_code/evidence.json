@@ -1,0 +1,88 @@
+{
+  "AI-01": {
+    "file": "ges_docs_AI-01.pdf",
+    "title": "Detecting hallucinations in large language models using semantic entropy",
+    "authors": "Sebastian Farquhar, Jannik Kossen, Lorenz Kuhn, Yarin Gal",
+    "venue": "Nature",
+    "year": "2024",
+    "doi": "10.1038/s41586-024-07421-0",
+    "type": "research_article",
+    "cards": [
+      {"id": "AI1", "page": 1, "essential": true, "claim": "研究针对幻觉中的编造，即随无关随机性变化的错误回答，而非所有事实错误。", "quote": "subset of hallucinations—confabulations"},
+      {"id": "AI2", "page": 2, "essential": true, "claim": "对同一问题采样多个答案，以双向蕴含聚合语义等价的回答，再衡量意义层面的不确定性。", "quote": "answers in the same cluster entail each other bidirectionally"},
+      {"id": "AI3", "page": 3, "essential": true, "claim": "在所研究的30个任务和模型组合中，语义熵平均AUROC为0.790，优于列出的基线。", "quote": "semantic entropy achieves the best AUROC value of 0.790"},
+      {"id": "AI4", "page": 5, "essential": true, "claim": "对长篇传记，研究先拆成事实陈述和对应问题，再估计不确定性。", "quote": "break down the entire paragraph into factual claims"},
+      {"id": "AI5", "page": 5, "essential": true, "claim": "方法不能直接解决模型自信但系统性地出错的情况。", "quote": "does not directly address situations in which LLMs are confidently wrong"},
+      {"id": "AI6", "page": 2, "essential": true, "claim": "论文提出无须输出概率的离散近似，使黑箱模型也能进行相关分析。", "quote": "discrete approximation of our estimator for semantic entropy"},
+      {"id": "AI7", "page": 3, "essential": false, "claim": "AUROC用于区分错误回答，不能解释为回答正确率或编造检出比例。", "quote": "area under the receiver operating characteristic"},
+      {"id": "AI8", "page": 4, "essential": false, "claim": "传记实验涉及21人。", "quote": "21 individuals notable enough"},
+      {"id": "AI9", "page": 5, "essential": false, "claim": "传记实验共提取150条事实陈述，并由人工判断真伪。", "quote": "150 factual claims in total"},
+      {"id": "AI10", "page": 2, "essential": false, "claim": "实验涉及LLaMA 2 Chat、Falcon Instruct及Mistral Instruct的特定规模版本。", "quote": "use LLaMA 2 Chat"},
+      {"id": "AI11", "page": 3, "essential": false, "claim": "离散近似在论文实验中与标准估计表现相近。", "quote": "The discrete variant of semantic entropy"},
+      {"id": "AI12", "page": 2, "essential": false, "claim": "GPT-4接口限制是论文写作当时的条件，原文注明后来已有变化。", "quote": "At the time of writing, GPT-4"}
+    ]
+  },
+  "BIO-02": {
+    "file": "ges_docs_BIO-02.pdf",
+    "title": "mRNA vaccines for infectious diseases — advances, challenges and opportunities",
+    "authors": "Norbert Pardi, Florian Krammer",
+    "venue": "Nature Reviews Drug Discovery",
+    "year": "2024",
+    "doi": "10.1038/s41573-024-01042-y",
+    "type": "review",
+    "cards": [
+      {"id": "BIO1", "page": 3, "essential": true, "claim": "主要RNA形式包括非复制型线性mRNA和自扩增mRNA，另有探索中的形式。", "quote": "Non-replicating (linear) mRNA, with or without modified nucleosides, and self-amplifying mRNA"},
+      {"id": "BIO2", "page": 4, "essential": true, "claim": "mRNA结构和化学修饰影响稳定性、翻译效率及炎症反应。", "quote": "half-life, stability, translatability and inflammatory capacity"},
+      {"id": "BIO3", "page": 6, "essential": true, "claim": "脂质纳米颗粒保护并递送mRNA，同时具有免疫刺激作用。", "quote": "phospholipid (helper lipid), cholesterol, polyethylene glycol"},
+      {"id": "BIO4", "page": 18, "essential": true, "claim": "人体接种可有反应原性，动物模型难以充分预测；安全性与免疫原性需要平衡。", "quote": "mRNA-LNP vaccines trigger systemic inflammatory responses"},
+      {"id": "BIO5", "page": 19, "essential": true, "claim": "肌注疫苗通常难以在上呼吸道诱导强黏膜免疫，黏膜递送仍是研发挑战。", "quote": "do not induce robust antibody responses in the URT"},
+      {"id": "BIO6", "page": 23, "essential": true, "claim": "冷链、价格和产能等因素影响全球公平获取。", "quote": "access to mRNA vaccines in low-income and middle-income countries"},
+      {"id": "BIO7", "page": 24, "essential": true, "claim": "下一代研发目标包括更低反应原性、更高稳定性和黏膜免疫。", "quote": "increased immunogenicity and decreased reactogenicity"},
+      {"id": "BIO8", "page": 5, "essential": false, "claim": "综述记录了自扩增mRNA疫苗ARCT-154在日本获批的进展，不能推广到全部自扩增平台。", "quote": "ARCT-154 was licensed in Japan"},
+      {"id": "BIO9", "page": 20, "essential": false, "claim": "新冠mRNA疫苗诱导的抗体在最初下降后可趋于稳定，不能简单断言毫无长期免疫。", "quote": "they eventually become stable"},
+      {"id": "BIO10", "page": 7, "essential": false, "claim": "编码抗原在细胞中表达，随后被免疫系统识别并触发反应。", "quote": "express the encoded antigens, which are then recognized by the immune system"},
+      {"id": "BIO11", "page": 18, "essential": false, "claim": "反应原性和免疫原性可能相互关联，减少接种不适时也需评估免疫效果。", "quote": "reactogenicity and immunogenicity often go hand"},
+      {"id": "BIO12", "page": 1, "essential": false, "claim": "文章作者、标题和综述类型的来源元数据。", "quote": "Norbert Pardi"},
+      {"id": "BIO13", "page": 5, "essential": false, "claim": "自扩增RNA进入细胞后，复制酶产生更多编码抗原的RNA，为低剂量研发提供机制依据，但不保证所有产品均有效。", "quote": "the viral replicase generates multiple copies of the antigen-encoding RNA"}
+    ]
+  },
+  "IND-03": {
+    "file": "ges_docs_IND-03.pdf",
+    "title": "A review of digital twins in smart industries: Concepts, milestones, trends, applications, opportunities and challenges",
+    "authors": "Peipei Ding et al.",
+    "venue": "Computers in Industry",
+    "year": "2026",
+    "doi": "10.1016/j.compind.2025.104398",
+    "type": "review",
+    "cards": [
+      {"id": "IND1", "page": 2, "essential": true, "claim": "数字孪生包含物理空间、虚拟空间和双向信息通道，区别于数字模型与数字影子。", "quote": "a DT features full bi-directional flow of information"},
+      {"id": "IND2", "page": 3, "essential": true, "claim": "工作流程包括数据清洗、建模、一致性测试、模拟、优化及反馈。", "quote": "a consistency test must be conducted"},
+      {"id": "IND3", "page": 6, "essential": true, "claim": "作者深入分析了选定期刊的84篇数字孪生相关文献。", "quote": "resulting in a total of 84 articles"},
+      {"id": "IND4", "page": 6, "essential": true, "claim": "综述分制造、建筑、交通和技术范式四大主题。", "quote": "manufacturing, construction, and transportation industries"},
+      {"id": "IND5", "page": 17, "essential": true, "claim": "应用仍面临高质量实时数据、系统集成、标准化、安全隐私与沟通问题。", "quote": "High-Quality, Real-Time Data Collection & Synchronisation"},
+      {"id": "IND6", "page": 16, "essential": false, "claim": "人在回路中的应用还需考虑工作场所监测、透明度和劳动者权利。", "quote": "human monitoring raises serious concerns around data privacy"},
+      {"id": "IND7", "page": 1, "essential": false, "claim": "论文标题、作者与发表期刊的来源元数据。", "quote": "Peipei Ding"},
+      {"id": "IND8", "page": 2, "essential": false, "claim": "孪生模型的准确性取决于数据、模型和算力，不能单靠双向通信判断可靠性。", "quote": "The accuracy of a DT depends on several factors"},
+      {"id": "IND9", "page": 9, "essential": false, "claim": "综述确实讨论了机床实时监测应用；科普中的温度振动场景是示意，不是所述研究的实验事实。", "quote": "real-time monitoring of machine tools"}
+    ]
+  },
+  "MED-04": {
+    "file": "ges_docs_MED-04.pdf",
+    "title": "Evolution of Future Medical AI Models — From Task-Specific, Disease-Centric to Universal Health",
+    "authors": "Weizhi Ma et al.",
+    "venue": "NEJM AI",
+    "year": "2024",
+    "doi": "10.1056/AIp2400289",
+    "type": "perspective",
+    "cards": [
+      {"id": "MED1", "page": 1, "essential": true, "claim": "文章提出从专科医疗AI到GMAI、UMAI与UHAI的发展设想。", "quote": "We introduce two concepts as new paradigms"},
+      {"id": "MED2", "page": 2, "essential": true, "claim": "UMAI设想纳入临床经验中的同理心、直觉等默会知识。", "quote": "particularly empathy and intuition"},
+      {"id": "MED3", "page": 2, "essential": true, "claim": "UHAI进一步扩展到健康维护和疾病预防，考虑非临床数据。", "quote": "UHAI further expands to cover health maintenance and disease prevention"},
+      {"id": "MED4", "page": 3, "essential": true, "claim": "可穿戴设备、行为和环境等数据带来机会，也增加数据整合与价值对齐要求。", "quote": "wearable devices, and other sources"},
+      {"id": "MED5", "page": 4, "essential": true, "claim": "这些是作者提出的研究方向，临床转化和采纳仍有挑战。", "quote": "challenges remain for the translation, adoption, and application"},
+      {"id": "MED6", "page": 4, "essential": false, "claim": "作者提出多个医疗智能体协作作为潜在技术方向。", "quote": "Multiple medical agent collaboration"},
+      {"id": "MED7", "page": 1, "essential": false, "claim": "文章标题、作者、发表年份和观点文章类型的来源元数据。", "quote": "Weizhi Ma"},
+      {"id": "MED8", "page": 4, "essential": false, "claim": "作者建议通过跨医疗场景的人类标注数据或模仿学习，探索将医护人员默会知识纳入模型。", "quote": "human-annotated data across various medical"}
+    ]
+  }
+}

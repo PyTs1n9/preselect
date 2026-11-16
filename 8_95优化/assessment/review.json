@@ -1,0 +1,80 @@
+{
+  "reviewer": "内部编审（AI辅助，非独立评委或领域专家）",
+  "review_date": "2026-11-16",
+  "article_sha256": {
+    "AI-01": "fce250d6694a04636254d750d77e8b71dfbb01aa4233578594bd958cdf42ce50",
+    "BIO-02": "1639603b59510eac084c74771370e9e4937210e9d30427c00b58eb0f3c36b5ef",
+    "IND-03": "2cfdbfe0e6c1fc23fa106c830abc416f2f8020fb6480efb0bed6fb5b0897d57a",
+    "MED-04": "f46e91ce1399e9cd41b1f042cbfdb609e4d714b370bba4d57cfdac59f2a54eb4"
+  },
+  "scores": {
+    "scientific_accuracy": 14,
+    "popular_expression": 18,
+    "content_completeness": 20,
+    "source_quality": 33
+  },
+  "score_notes": {
+    "scientific_accuracy": "42张证据卡定位到原文页；逐段审计覆盖四篇正文，并对八条警示逐项核查或限定。临床保护与免疫原性的越界推断、UMAI任务范围的暗示已修正。尚未由独立领域专家逐句复核，保留1分。",
+    "popular_expression": "四篇均解释关键术语、给出具体场景并标明类比边界；BIO-02和MED-04的术语解释经本轮改写。缩写与概念仍较密，尚无真实普通读者试读，保留2分。",
+    "content_completeness": "42张证据卡均映射到当前成稿，四篇覆盖核心观点、研究过程或作用机制、关键证据及必要局限；次级细节按2500字上限取舍，不影响赛题要求的核心完整性。",
+    "source_quality": "真实API完成四篇起稿，原文和原始输出有哈希运行记录；代码提供两阶段生成、定向修复、42条页码证据、逐段审计及绑定原文和文章哈希的评分门槛，14项测试通过。异常路径与人工修订后的逐字自动复现尚不完备，保留2分。"
+  },
+  "coverage": {
+    "AI-01": {
+      "AI1": {"status": "covered", "article_excerpt": "研究的是幻觉中的一个子集：“编造”"},
+      "AI2": {"status": "covered", "article_excerpt": "研究对同一问题采样多个答案，再按意义聚类"},
+      "AI3": {"status": "covered", "article_excerpt": "平均AUROC为0.790"},
+      "AI4": {"status": "covered", "article_excerpt": "先把传记段落拆成事实陈述"},
+      "AI5": {"status": "covered", "article_excerpt": "不能直接处理模型自信却系统性出错的情况"},
+      "AI6": {"status": "covered", "article_excerpt": "不需要获取输出概率的离散近似版本"},
+      "AI7": {"status": "covered", "article_excerpt": "AUROC是一种评价区分和排序能力的指标"},
+      "AI8": {"status": "covered", "article_excerpt": "从21人的模型生成传记中提取了150条事实陈述"},
+      "AI9": {"status": "covered", "article_excerpt": "提取了150条事实陈述，并人工判断其真伪"},
+      "AI10": {"status": "covered", "article_excerpt": "LLaMA 2 Chat的7B、13B和70B版本"},
+      "AI11": {"status": "covered", "article_excerpt": "该版本在研究中的表现与标准估计方法相近"},
+      "AI12": {"status": "covered", "article_excerpt": "在论文写作当时，GPT-4不开放输出概率或隐藏状态"}
+    },
+    "BIO-02": {
+      "BIO1": {"status": "covered", "article_excerpt": "普通的线性mRNA和自扩增mRNA"},
+      "BIO2": {"status": "covered", "article_excerpt": "分别影响稳定性、抗原产量与免疫反应"},
+      "BIO3": {"status": "covered", "article_excerpt": "辅助磷脂、胆固醇、连接聚乙二醇的脂质"},
+      "BIO4": {"status": "covered", "article_excerpt": "人体接种mRNA-LNP疫苗后，可出现发热"},
+      "BIO5": {"status": "covered", "article_excerpt": "通常不能诱导强健的上呼吸道抗体反应"},
+      "BIO6": {"status": "covered", "article_excerpt": "中低收入国家获取mRNA疫苗不足且延迟"},
+      "BIO7": {"status": "covered", "article_excerpt": "增强免疫原性、降低反应原性、提高稳定性和诱导黏膜免疫"},
+      "BIO8": {"status": "covered", "article_excerpt": "ARCT-154在日本获批"},
+      "BIO9": {"status": "covered", "article_excerpt": "先下降，随后可趋于稳定"},
+      "BIO10": {"status": "covered", "article_excerpt": "疫苗中的mRNA编码抗原，即供免疫系统识别的目标"},
+      "BIO11": {"status": "covered", "article_excerpt": "反应原性与免疫原性有时会一起变化"},
+      "BIO12": {"status": "covered", "article_excerpt": "Norbert Pardi与Florian Krammer于2024年发表的这篇综述"},
+      "BIO13": {"status": "covered", "article_excerpt": "后者进入细胞后，还能产生更多用于表达抗原的RNA"}
+    },
+    "IND-03": {
+      "IND1": {"status": "covered", "article_excerpt": "数字孪生”则具有完整的双向信息流"},
+      "IND2": {"status": "covered", "article_excerpt": "还要做“一致性测试”"},
+      "IND3": {"status": "covered", "article_excerpt": "84篇数字孪生相关文献"},
+      "IND4": {"status": "covered", "article_excerpt": "制造业、建筑业、交通运输业，以及技术与范式"},
+      "IND5": {"status": "covered", "article_excerpt": "高质量实时数据的采集与同步"},
+      "IND6": {"status": "covered", "article_excerpt": "广泛的人员监测可能涉及不透明的数据收集"},
+      "IND7": {"status": "covered", "article_excerpt": "Peipei Ding等人在《Computers in Industry》发表的这篇综述"},
+      "IND8": {"status": "covered", "article_excerpt": "还须检查输入数据和模型是否足够准确"},
+      "IND9": {"status": "covered", "article_excerpt": "假设一台机床的传感器不断记录温度和振动"}
+    },
+    "MED-04": {
+      "MED1": {"status": "covered", "article_excerpt": "提出UMAI与UHAI两个未来概念"},
+      "MED2": {"status": "covered", "article_excerpt": "尤其是同理心与直觉"},
+      "MED3": {"status": "covered", "article_excerpt": "健康维护与疾病预防"},
+      "MED4": {"status": "covered", "article_excerpt": "可穿戴设备、利用物联网数据的人工智能"},
+      "MED5": {"status": "covered", "article_excerpt": "临床转化、采纳与应用仍有重大挑战"},
+      "MED6": {"status": "covered", "article_excerpt": "多个医疗智能体协作"},
+      "MED7": {"status": "covered", "article_excerpt": "Weizhi Ma等人在《NEJM AI》发表观点文章"},
+      "MED8": {"status": "covered", "article_excerpt": "跨医疗场景的人类标注数据"}
+    }
+  },
+  "limitations": [
+    "本分数为AI辅助的内部阶段自评，不是独立人类读者、领域专家或赛事评委结果。",
+    "四篇文章以真实API生成稿为起点，经编审修订；模型审计也使用同一服务，不构成独立鉴定。",
+    "尚未打包ZIP；当前阶段已验收格式项目全部通过，最终提交格式分仍待验收。",
+    "覆盖映射中的文章片段只能证明文本出现、不能单独证明语义正确；八条争议的处理依据在 audit_resolutions.json，仍需参赛者最终确认。"
+  ]
+}

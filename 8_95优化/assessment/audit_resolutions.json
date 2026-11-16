@@ -1,0 +1,46 @@
+{
+  "_meta": {
+    "date": "2026-11-16",
+    "scope": "对当前文章和指定原始 PDF 的内部编审记录；非独立领域专家鉴定。source_checked 表示核对完整原文，accepted_as_explanation 表示保留不冒充研究结果的科普解释。"
+  },
+  "BIO-02/P05/C2": {
+    "article_excerpt": "细胞依照RNA制造蛋白质的过程叫“翻译”。",
+    "resolution": "accepted_as_explanation",
+    "reason": "这是对生物学术语 translation 的基础释义，用于解释原文第4页讨论的翻译效率；没有增加该综述的实验发现。"
+  },
+  "BIO-02/P10/C2": {
+    "article_excerpt": "通俗地说，非劣效是按研究预先设定的标准判断“没有差到不可接受”，并不表示所有效果都完全一样。",
+    "resolution": "accepted_as_explanation",
+    "reason": "这是非劣效试验概念的通俗解释。原文第5页仅报告该加强针研究达到非劣效，正文没有虚构界值，也明确限制了适用人群与结论范围。"
+  },
+  "BIO-02/P12/C4": {
+    "article_excerpt": "免疫应答的变化也不能直接等同于实际保护效果的变化。",
+    "resolution": "accepted_as_explanation",
+    "reason": "这句提醒读者区分免疫原性指标与临床保护结局，不宣称该综述测得两者的差值；原文第18页只说安全性改进可能伴随较弱免疫应答。"
+  },
+  "BIO-02/P14/C3": {
+    "article_excerpt": "这是免疫系统形成抗体应答的一部分",
+    "resolution": "accepted_as_explanation",
+    "reason": "这是对生发中心反应的基础释义，不是本综述的新实验结果；原文第20页报告接种者淋巴结中的生发中心反应可持续数月，并对长期意义保持不确定性。"
+  },
+  "MED-04/P07/C2": {
+    "article_excerpt": "“默会知识”指医护人员在实践中积累、难以完整写成明文规则的经验。",
+    "resolution": "accepted_as_explanation",
+    "reason": "这是对 tacit knowledge 的通俗释义，原文第2、4页以医护人员的同理心和直觉举例；正文同时明确这种能力仍是研究目标。"
+  },
+  "MED-04/P08/C3": {
+    "article_excerpt": "这篇观点文章没有提供对这些目标能力的临床验证结果。",
+    "resolution": "source_checked",
+    "reason": "已核对原文 PDF 全文第1至5页：文章标为 Perspective，论述 UMAI 目标及研究路径，没有呈现同理心或直觉能力的患者试验、验证样本或结果表。"
+  },
+  "MED-04/P11/C3": {
+    "article_excerpt": "但没有报告实际应用后的健康收益。",
+    "resolution": "source_checked",
+    "reason": "已核对原文 PDF 全文第1至5页：可穿戴设备、物联网及发展中国家情境均以潜在用途讨论，没有报告 UHAI 部署后的健康结局数据。"
+  },
+  "MED-04/P16/C3": {
+    "article_excerpt": "但文章未提供相应临床试验或效果比较，不能把预期写成已证实的准确率提升。",
+    "resolution": "source_checked",
+    "reason": "已核对原文 PDF 全文第1至5页：多医疗智能体协作部分用将来式预测决策改善，未提供该设想的临床试验、对照比较或准确率数字。"
+  }
+}
