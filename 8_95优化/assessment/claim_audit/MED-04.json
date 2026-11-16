@@ -1,0 +1,710 @@
+{
+  "material_id": "MED-04",
+  "source_sha256": "95e32e78f76efc7854852de4c5fbb299fc239f151bdddf852b502342351fcad0",
+  "article_sha256": "f46e91ce1399e9cd41b1f042cbfdb609e4d714b370bba4d57cfdac59f2a54eb4",
+  "model": "gpt-6.1-sol",
+  "scope": "Model judgments use the supplied evidence excerpts, not the full PDF.",
+  "validation": "Quote, page, paragraph and article excerpt locations were checked mechanically; semantic support requires human review.",
+  "paragraphs": [
+    {
+      "id": "P01",
+      "claims": [
+        {
+          "article_excerpt": "识别疾病、回应患者的处境，以及在疾病出现之前关注健康，并不是同一件事。",
+          "status": "supported",
+          "evidence": [
+            {
+              "card_id": "MED1",
+              "page": 1,
+              "quote": "particularly physician empathy and intuition."
+            },
+            {
+              "card_id": "MED1",
+              "page": 1,
+              "quote": "UHAI further expands beyond addressing disease states, a domain of UMAI, and covers health mainte- nance and disease prevention"
+            }
+          ],
+          "reason": "这是对疾病处理、临床人文特征与健康维护等不同目标的概括，不是实验结果陈述。段首问句用于引出这些区别。"
+        }
+      ]
+    },
+    {
+      "id": "P02",
+      "claims": [
+        {
+          "article_excerpt": "2024年，Weizhi Ma等人在《NEJM AI》发表观点文章",
+          "status": "supported",
+          "evidence": [
+            {
+              "card_id": "MED7",
+              "page": 1,
+              "quote": "PERSPECTIVE"
+            },
+            {
+              "card_id": "MED7",
+              "page": 1,
+              "quote": "Weizhi Ma"
+            },
+            {
+              "card_id": "MED7",
+              "page": 1,
+              "quote": "Published: July 12, 2024"
+            }
+          ],
+          "reason": "作者、年份和观点文章类型与摘录相符；期刊名称由给定论文元数据支持。"
+        },
+        {
+          "article_excerpt": "讨论医疗人工智能从任务专用模型走向通用医疗人工智能，并提出UMAI与UHAI两个未来概念。",
+          "status": "supported",
+          "evidence": [
+            {
+              "card_id": "MED1",
+              "page": 1,
+              "quote": "Recently, the focus has shifted from task-speci ﬁc to generalized medical arti ﬁcial intelli- gence (GMAI) models."
+            },
+            {
+              "card_id": "MED1",
+              "page": 1,
+              "quote": "We introduce two concepts as new paradigms: universal medical arti ﬁcial intelligence (UMAI) and universal health arti ﬁcial intelligence (UHAI)."
+            }
+          ],
+          "reason": "准确概括了文章讨论的转向及其提出的两个范式。"
+        },
+        {
+          "article_excerpt": "这是一份发展设想与研究议程，而不是报告患者治疗效果的临床试验。",
+          "status": "supported",
+          "evidence": [
+            {
+              "card_id": "MED7",
+              "page": 1,
+              "quote": "PERSPECTIVE"
+            },
+            {
+              "card_id": "MED1",
+              "page": 1,
+              "quote": "This article discusses the foresee-able transition from specialized MAI models toward more universally applicable models."
+            }
+          ],
+          "reason": "对文章类型与主要目的的描述有依据，没有将观点文章误写成临床试验。"
+        }
+      ]
+    },
+    {
+      "id": "P03",
+      "claims": [
+        {
+          "article_excerpt": "医疗人工智能简称MAI。原文回顾了相关技术从传统机器学习到深度学习、从监督学习到无监督学习的演进",
+          "status": "supported",
+          "evidence": [
+            {
+              "card_id": "MED7",
+              "page": 1,
+              "quote": "Medical arti ﬁcial intelligence (MAI) has evolved from traditional machine learning to deep learning and from supervised methodologies to unsupervised learning paradigms."
+            }
+          ],
+          "reason": "缩写及两组技术演进方向均与原文一致。"
+        },
+        {
+          "article_excerpt": "研究重点近期正从任务专用模型转向通用医疗人工智能，即GMAI。这并不意味着前一种技术路线已经被后一种完全取代。",
+          "status": "supported",
+          "evidence": [
+            {
+              "card_id": "MED1",
+              "page": 1,
+              "quote": "Recently, the focus has shifted from task-speci ﬁc to generalized medical arti ﬁcial intelli- gence (GMAI) models."
+            }
+          ],
+          "reason": "原文说的是研究重点转移，而不是完全替代；文章保留了这一解释边界。"
+        }
+      ]
+    },
+    {
+      "id": "P04",
+      "claims": [
+        {
+          "article_excerpt": "任务专用模型围绕特定问题设计；GMAI则面向更广泛的医疗任务。",
+          "status": "supported",
+          "evidence": [
+            {
+              "card_id": "MED1",
+              "page": 1,
+              "quote": "Recently, the focus has shifted from task-speci ﬁc to generalized medical arti ﬁcial intelli- gence (GMAI) models."
+            },
+            {
+              "card_id": "MED1",
+              "page": 1,
+              "quote": "This article discusses the foresee-able transition from specialized MAI models toward more universally applicable models."
+            }
+          ],
+          "reason": "对专用与通用模型任务范围的比较符合原文。"
+        },
+        {
+          "article_excerpt": "可以把前者比作用途明确的工具，后者比作希望处理多种工作的工具箱。但这个类比只说明任务范围：工具更多，不代表一定更可靠，更不意味着已经具备医生的判断力。",
+          "status": "illustration",
+          "evidence": [
+            {
+              "card_id": "MED1",
+              "page": 1,
+              "quote": "These new arti ﬁcial intelligence (AI) models and algorithms still need to be translated to clinical use in various settings."
+            }
+          ],
+          "reason": "明确使用“比作”和“类比”，是作者自设的解释性比喻，不是论文中的实验案例或可靠性比较。"
+        },
+        {
+          "article_excerpt": "作者强调，这些模型仍需转化到不同临床场景中使用。",
+          "status": "supported",
+          "evidence": [
+            {
+              "card_id": "MED1",
+              "page": 1,
+              "quote": "These new arti ﬁcial intelligence (AI) models and algorithms still need to be translated to clinical use in various settings."
+            }
+          ],
+          "reason": "与原文对临床转化需求的表述一致。"
+        }
+      ]
+    },
+    {
+      "id": "P05",
+      "claims": [
+        {
+          "article_excerpt": "作者还指出，现有医疗AI的训练数据主要来自发达国家，未能充分涵盖发展中国家特有的医疗问题。",
+          "status": "supported",
+          "evidence": [
+            {
+              "card_id": "MED2",
+              "page": 2,
+              "quote": "Third, MAI models a r ep r i m a r i l yt r a i n e do nd a t ac o l l e c t e df r o md e v e l o p e dc o u n - tries, excluding medical issues unique to developing ones."
+            }
+          ],
+          "reason": "原文明确提出训练数据的地域偏向及对发展中国家特有医疗问题的遗漏。"
+        },
+        {
+          "article_excerpt": "因此，“通用”的名称不能被理解为已适用于所有地区和人群。",
+          "status": "supported",
+          "evidence": [
+            {
+              "card_id": "MED2",
+              "page": 2,
+              "quote": "excluding medical issues unique to developing ones."
+            },
+            {
+              "card_id": "MED1",
+              "page": 1,
+              "quote": "These new arti ﬁcial intelligence (AI) models and algorithms still need to be translated to clinical use in various settings."
+            }
+          ],
+          "reason": "这是基于地域覆盖不足与转化尚未完成作出的有限推论，并未宣称已验证某一人群的具体效果。"
+        }
+      ]
+    },
+    {
+      "id": "P06",
+      "claims": [
+        {
+          "article_excerpt": "作者提出的“普适医疗人工智能”，即UMAI，与GMAI相比，进一步希望模拟临床实践所需的重要特征，尤其是同理心与直觉。",
+          "status": "supported",
+          "evidence": [
+            {
+              "card_id": "MED1",
+              "page": 1,
+              "quote": "UMAI models will be distin- guished from GMAI by their capability to emulate critical aspects of human intelligencenecessary in clinical practice, particularly physician empathy and intuition."
+            }
+          ],
+          "reason": "正确保留了未来设想语气，并准确描述UMAI相对于GMAI的预期区别。"
+        }
+      ]
+    },
+    {
+      "id": "P07",
+      "claims": [
+        {
+          "article_excerpt": "原文把这一方向与临床中的“默会知识”联系起来，例如医护人员长期实践中形成的直觉和同理心。",
+          "status": "supported",
+          "evidence": [
+            {
+              "card_id": "MED8",
+              "page": 4,
+              "quote": "UMAI models would rely on the injection of tacit knowledge, such as health care professionals ’empathy and intuition."
+            }
+          ],
+          "reason": "同理心与直觉确为原文列举的默会知识内容；此处不是虚构实验案例。"
+        },
+        {
+          "article_excerpt": "“默会知识”指医护人员在实践中积累、难以完整写成明文规则的经验。",
+          "status": "insufficient_evidence",
+          "evidence": [
+            {
+              "card_id": "MED8",
+              "page": 4,
+              "quote": "Injection of medical tacit knowledge."
+            }
+          ],
+          "reason": "给定摘录使用并举例说明默会知识，但没有提供“难以完整写成明文规则”这一定义，不能凭常识补证。"
+        },
+        {
+          "article_excerpt": "作者提出，可用跨医疗场景的人类标注数据，或让模型学习专家连续决策的过程，探索如何纳入这类经验；怎样有效做到仍是研究问题。",
+          "status": "supported",
+          "evidence": [
+            {
+              "card_id": "MED8",
+              "page": 4,
+              "quote": "A practical yet costly strategy for knowledge injection involves constructingdiverse sets of human-annotated data across various medicalscenarios to capture tacit knowledge in decision-making andtraining models on these data to integrate human expertise."
+            },
+            {
+              "card_id": "MED8",
+              "page": 4,
+              "quote": "understand the sequential actions of humanexperts."
+            },
+            {
+              "card_id": "MED8",
+              "page": 4,
+              "quote": "Novel methodologies to enable MAI models toassimilate valuable tacit knowledge should be explored."
+            }
+          ],
+          "reason": "两条探索路径及尚需研究的语气均有依据；原文还指出标注数据策略成本高。"
+        }
+      ]
+    },
+    {
+      "id": "P08",
+      "claims": [
+        {
+          "article_excerpt": "把同理心、直觉纳入模型研究，不等于模型已经拥有这些能力",
+          "status": "supported",
+          "evidence": [
+            {
+              "card_id": "MED8",
+              "page": 4,
+              "quote": "UMAI models would rely on the injection of tacit knowledge, such as health care professionals ’empathy and intuition."
+            },
+            {
+              "card_id": "MED8",
+              "page": 4,
+              "quote": "Novel methodologies to enable MAI models toassimilate valuable tacit knowledge should be explored."
+            }
+          ],
+          "reason": "原文以未来依赖与探索方法表述，并未把目标能力作为已实现结果。"
+        },
+        {
+          "article_excerpt": "能够生成体贴的语言，也不能据此认定它已达到作者设想的临床能力。",
+          "status": "supported",
+          "evidence": [
+            {
+              "card_id": "MED1",
+              "page": 1,
+              "quote": "UMAI models will be distin- guished from GMAI by their capability to emulate critical aspects of human intelligencenecessary in clinical practice, particularly physician empathy and intuition."
+            }
+          ],
+          "reason": "这是对证据推断范围的提醒：原文目标是临床所需特征，不能仅凭语言表现就认定目标已实现；不是语言生成实验结论。"
+        },
+        {
+          "article_excerpt": "这篇观点文章没有提供对这些目标能力的临床验证结果。",
+          "status": "insufficient_evidence",
+          "evidence": [
+            {
+              "card_id": "MED7",
+              "page": 1,
+              "quote": "PERSPECTIVE"
+            },
+            {
+              "card_id": "MED5",
+              "page": 4,
+              "quote": "Despite recent advancements, signi ﬁcant challenges remain for the translation, adoption, and application of MAI."
+            }
+          ],
+          "reason": "给定摘录没有展示此类结果，但仅凭摘录及文章类型，不能严格确认全文完全没有提供相关临床验证。"
+        }
+      ]
+    },
+    {
+      "id": "P09",
+      "claims": [
+        {
+          "article_excerpt": "作者进一步提出“普适健康人工智能”，即UHAI。相较于UMAI侧重疾病状态，UHAI希望扩展到健康维护与疾病预防，并结合更广泛的非临床信息，包括社会经济、行为和环境因素。",
+          "status": "supported",
+          "evidence": [
+            {
+              "card_id": "MED1",
+              "page": 1,
+              "quote": "UHAI further expands beyond addressing disease states, a domain of UMAI, and covers health mainte- nance and disease prevention"
+            },
+            {
+              "card_id": "MED3",
+              "page": 2,
+              "quote": "UHAI further expands to cover health maintenance and disease prevention, shifting from using only traditional clinical data to integrating broader information from nontraditional sources (socioeconomic, behavioral, and environmental factors)."
+            }
+          ],
+          "reason": "范式名称、与UMAI的比较及三类非传统信息均有原文支持，且保留设想语气。"
+        }
+      ]
+    },
+    {
+      "id": "P10",
+      "claims": [
+        {
+          "article_excerpt": "不仅关注“生病时发生了什么”，也尝试了解医疗活动之外的健康背景。",
+          "status": "supported",
+          "evidence": [
+            {
+              "card_id": "MED3",
+              "page": 2,
+              "quote": "UHAI further expands to cover health maintenance and disease prevention, shifting from using only traditional clinical data to integrating broader information from nontraditional sources (socioeconomic, behavioral, and environmental factors)."
+            }
+          ],
+          "reason": "这是对疾病导向转向更广泛健康背景的通俗概括，不是新增实验案例。"
+        },
+        {
+          "article_excerpt": "这是观察范围和研究目标的扩展，不能理解为只要收集更多信息，就能准确预测或预防疾病。",
+          "status": "supported",
+          "evidence": [
+            {
+              "card_id": "MED4",
+              "page": 3,
+              "quote": "Data from AI of Things (which leverages Internet of Things data), wearable devices, and other sources could be useful in modeling an individual ’s health state"
+            },
+            {
+              "card_id": "MED5",
+              "page": 4,
+              "quote": "Despite recent advancements, signi ﬁcant challenges remain for the translation, adoption, and application of MAI."
+            }
+          ],
+          "reason": "原文仅提出潜在用途并强调挑战，没有建立更多数据足以保证准确预测或预防的因果关系。"
+        }
+      ]
+    },
+    {
+      "id": "P11",
+      "claims": [
+        {
+          "article_excerpt": "作者提到，可穿戴设备、利用物联网数据的人工智能及其他来源的数据，可能有助于描述个体健康状态，从多个角度理解健康。这些数据可用于探索临床资料很少甚至缺乏的情境。",
+          "status": "supported",
+          "evidence": [
+            {
+              "card_id": "MED4",
+              "page": 3,
+              "quote": "Moving from UMAI to UHAI requires gathering additional nonclinical data to support scenarios with little to no clini-cal data."
+            },
+            {
+              "card_id": "MED4",
+              "page": 3,
+              "quote": "Data from AI of Things (which leverages Internet of Things data), wearable devices, and other sources could be useful in modeling an individual ’s health state and enhancing our comprehension of health from multipleperspectives."
+            }
+          ],
+          "reason": "数据来源、潜在用途与临床数据稀缺的适用情境均有支持，没有写成已证实收益。"
+        },
+        {
+          "article_excerpt": "原文特别强调其对发展中国家的潜在意义",
+          "status": "supported",
+          "evidence": [
+            {
+              "card_id": "MED4",
+              "page": 3,
+              "quote": "This is particularly crucial for developing countries, where technological integrations can provide invaluable insights and support in health-related matters."
+            }
+          ],
+          "reason": "原文明确突出发展中国家，并以潜在支持而非实测效益表述。"
+        },
+        {
+          "article_excerpt": "但没有报告实际应用后的健康收益。",
+          "status": "insufficient_evidence",
+          "evidence": [
+            {
+              "card_id": "MED4",
+              "page": 3,
+              "quote": "could be useful in modeling an individual ’s health state"
+            }
+          ],
+          "reason": "该摘录没有健康收益数据，但不足以确认全文没有任何实际应用收益报告。"
+        }
+      ]
+    },
+    {
+      "id": "P12",
+      "claims": [
+        {
+          "article_excerpt": "假设同一个人的就诊记录、手环活动记录和居住环境数据分别保存在三处：若日期、单位和个人身份对不上，信息再多也无法可靠地合在一起。这个例子解释“数据对齐”，不是论文验证过的健康预测系统。",
+          "status": "illustration",
+          "evidence": [
+            {
+              "card_id": "MED4",
+              "page": 3,
+              "quote": "These strate- gies could signi ﬁcantly enhance data alignment and utiliza- tion within MAI models"
+            }
+          ],
+          "reason": "明确用“假设”引入，并声明不是论文验证系统；日期、单位、身份和三处存储均为解释性设定，不当作论文事实。"
+        }
+      ]
+    },
+    {
+      "id": "P13",
+      "claims": [
+        {
+          "article_excerpt": "“价值对齐”是另一件事：模型的建议还应符合人的需要与医疗场景中的合理原则。",
+          "status": "supported",
+          "evidence": [
+            {
+              "card_id": "MED4",
+              "page": 3,
+              "quote": "Aligning MAI with mainstream human values."
+            },
+            {
+              "card_id": "MED4",
+              "page": 3,
+              "quote": "special attention ought to be given to the construction of high-quality alignment data (aligned with common sense) in the medical context."
+            }
+          ],
+          "reason": "作为规范性方向的通俗解释，符合主流人类价值及医疗常识的要求，而非声称已验证模型符合所有人的需要。"
+        },
+        {
+          "article_excerpt": "作者提到一般性的模型对齐方法，同时强调医疗场景需要高质量、符合常识的对齐数据。它与前述把不同数据对上号的问题并不相同。",
+          "status": "supported",
+          "evidence": [
+            {
+              "card_id": "MED4",
+              "page": 3,
+              "quote": "Apart from the need to develop ef ﬁcient and reasonable value alignment methods in general scenarios (e.g., human feedback reinforcement learning 6), special attention ought to be given to the construction of high-quality alignment data (aligned with common sense) in the medical context."
+            }
+          ],
+          "reason": "一般对齐方法与医疗数据要求有直接依据；原文分别讨论数据对齐和价值对齐，文章没有将两者混为一谈。"
+        }
+      ]
+    },
+    {
+      "id": "P14",
+      "claims": [
+        {
+          "article_excerpt": "更多数据带来的是研究机会，也伴随着整合与价值对齐要求；不能把数据规模扩大直接等同于医疗能力提升。",
+          "status": "supported",
+          "evidence": [
+            {
+              "card_id": "MED4",
+              "page": 3,
+              "quote": "These strate- gies could signi ﬁcantly enhance data alignment and utiliza- tion within MAI models"
+            },
+            {
+              "card_id": "MED4",
+              "page": 3,
+              "quote": "Moving from UMAI to UHAI requires gathering additional nonclinical data to support scenarios with little to no clini-cal data."
+            },
+            {
+              "card_id": "MED4",
+              "page": 3,
+              "quote": "special attention ought to be given to the construction of high-quality alignment data (aligned with common sense) in the medical context."
+            }
+          ],
+          "reason": "是对数据机会与配套研究要求的综合概括；没有把数据量与能力提升写成已证实的直接因果关系。"
+        }
+      ]
+    },
+    {
+      "id": "P15",
+      "claims": [
+        {
+          "article_excerpt": "作者还提出多个医疗智能体协作的方向。",
+          "status": "supported",
+          "evidence": [
+            {
+              "card_id": "MED6",
+              "page": 4,
+              "quote": "Multiple medical agent collaboration."
+            }
+          ],
+          "reason": "原文明确将多医疗智能体协作列为讨论方向。"
+        },
+        {
+          "article_excerpt": "“智能体”在这里可通俗理解为承担一定任务的AI单元。",
+          "status": "supported",
+          "evidence": [
+            {
+              "card_id": "MED6",
+              "page": 4,
+              "quote": "The key toachieving multiple agent collaboration is the construction ofvarious medical agents and dynamic agent selection whendistinct tasks are uniquely appropriate"
+            }
+          ],
+          "reason": "这是根据不同智能体与不同任务相匹配的描述作出的通俗解释，并非严格技术定义。"
+        },
+        {
+          "article_excerpt": "复杂病情可能需要多名专科人员共同讨论；作者借此设想，让多个医疗智能体协作，帮助形成更全面的分析与干预判断。",
+          "status": "supported",
+          "evidence": [
+            {
+              "card_id": "MED6",
+              "page": 4,
+              "quote": "Complex patient conditions may require multiple specialists to devise optimaltreatment plans."
+            },
+            {
+              "card_id": "MED6",
+              "page": 4,
+              "quote": "Multiagent systems in LLMs 10can effec- tively enable MAI models to achieve similar collaborations,gaining a more comprehensive understanding of a patient ’s pathophysiological status and appropriate interventions."
+            }
+          ],
+          "reason": "原文本身以专科人员协作为参照提出智能体方向；文章将其保留为作者设想，而非已完成的临床验证。"
+        }
+      ]
+    },
+    {
+      "id": "P16",
+      "claims": [
+        {
+          "article_excerpt": "这种类比表达的是协作思路，并不证明AI协作已经等同于医生会诊。原文讨论的关键包括构建不同医疗智能体，以及根据具体任务动态选择参与者。",
+          "status": "supported",
+          "evidence": [
+            {
+              "card_id": "MED6",
+              "page": 4,
+              "quote": "by making group deci- sions akin to those of health care professionals."
+            },
+            {
+              "card_id": "MED6",
+              "page": 4,
+              "quote": "The key toachieving multiple agent collaboration is the construction ofvarious medical agents and dynamic agent selection whendistinct tasks are uniquely appropriate"
+            }
+          ],
+          "reason": "原文说的是类似医护人员的集体决策，并列出构建与动态选择智能体的要点，没有提供等效性证明。这里解释的是原文自身的类比，不是新设案例。"
+        },
+        {
+          "article_excerpt": "作者对改善复杂情境中的决策持积极预期",
+          "status": "supported",
+          "evidence": [
+            {
+              "card_id": "MED6",
+              "page": 4,
+              "quote": "Thiswill also greatly enhance the decision-making accuracy and effectiveness in complex situations"
+            }
+          ],
+          "reason": "原文确实表达了明显的积极预期；文章未将其改写为实测结果。"
+        },
+        {
+          "article_excerpt": "但文章未提供相应临床试验或效果比较，不能把预期写成已证实的准确率提升。",
+          "status": "insufficient_evidence",
+          "evidence": [
+            {
+              "card_id": "MED6",
+              "page": 4,
+              "quote": "Thiswill also greatly enhance the decision-making accuracy and effectiveness in complex situations"
+            }
+          ],
+          "reason": "不能将预期当作已证实提升的提醒合理；但摘录不足以核实全文均未提供相关试验或效果比较这一否定断言。"
+        }
+      ]
+    },
+    {
+      "id": "P17",
+      "claims": [
+        {
+          "article_excerpt": "作者还讨论了改进模型推理和基础架构的可能性。",
+          "status": "supported",
+          "evidence": [
+            {
+              "card_id": "MED6",
+              "page": 4,
+              "quote": "research on chain-of-thought 8and tree-of-thought9 reasoning has signi ﬁcantly enhanced the reasoning capabili- ties of AI models, and it has created the potential for furtherintegration into MAI models."
+            },
+            {
+              "card_id": "MED5",
+              "page": 4,
+              "quote": "future foundational model architecturestailored for the needs of MAI could ignite a new waveof research and development in MAI, such as neuroAItechniques."
+            }
+          ],
+          "reason": "推理方法进一步融入医疗AI及未来基础架构均为原文讨论内容。"
+        },
+        {
+          "article_excerpt": "这些共同构成研究方向，而非一套已经成熟、可以直接部署的产品方案。",
+          "status": "supported",
+          "evidence": [
+            {
+              "card_id": "MED5",
+              "page": 4,
+              "quote": "Despite recent advancements, signi ﬁcant challenges remain for the translation, adoption, and application of MAI."
+            },
+            {
+              "card_id": "MED8",
+              "page": 4,
+              "quote": "Novel methodologies to enable MAI models toassimilate valuable tacit knowledge should be explored."
+            }
+          ],
+          "reason": "与全文摘录中的探索定位及转化挑战相符，未将未来研究建议误称为成熟产品。"
+        }
+      ]
+    },
+    {
+      "id": "P18",
+      "claims": [
+        {
+          "article_excerpt": "这篇观点文章描绘了医疗AI的两重扩展：一是从完成任务，走向模拟同理心、直觉等临床特征；二是从关注疾病，走向结合非临床信息的健康维护与预防。",
+          "status": "supported",
+          "evidence": [
+            {
+              "card_id": "MED1",
+              "page": 1,
+              "quote": "UMAI models will be distin- guished from GMAI by their capability to emulate critical aspects of human intelligencenecessary in clinical practice, particularly physician empathy and intuition."
+            },
+            {
+              "card_id": "MED3",
+              "page": 2,
+              "quote": "UHAI further expands to cover health maintenance and disease prevention, shifting from using only traditional clinical data to integrating broader information from nontraditional sources (socioeconomic, behavioral, and environmental factors)."
+            }
+          ],
+          "reason": "对文章两个主要扩展方向的总结准确，且使用“描绘”“走向”保持观点文章的前瞻语气。"
+        },
+        {
+          "article_excerpt": "UMAI和UHAI是作者提出的未来范式，不是已经兑现的能力清单。",
+          "status": "supported",
+          "evidence": [
+            {
+              "card_id": "MED1",
+              "page": 1,
+              "quote": "We introduce two concepts as new paradigms: universal medical arti ﬁcial intelligence (UMAI) and universal health arti ﬁcial intelligence (UHAI)."
+            },
+            {
+              "card_id": "MED5",
+              "page": 4,
+              "quote": "Despite recent advancements, signi ﬁcant challenges remain for the translation, adoption, and application of MAI."
+            }
+          ],
+          "reason": "原文明确称其为新概念与新范式，并指出转化仍有挑战，因此不宜将其当作已实现能力目录。"
+        }
+      ]
+    },
+    {
+      "id": "P19",
+      "claims": [
+        {
+          "article_excerpt": "理解这一设想，既要看到默会知识、多源数据和智能体协作的可能性，也要保留证据边界。",
+          "status": "supported",
+          "evidence": [
+            {
+              "card_id": "MED5",
+              "page": 4,
+              "quote": "We propose UMAI and UHAI as innovative models to tackle these issues by integrating tacit knowledge along- side untraditional nonclinical data, enabling a holistic view of health."
+            },
+            {
+              "card_id": "MED6",
+              "page": 4,
+              "quote": "Multiple medical agent collaboration."
+            }
+          ],
+          "reason": "三个研究方向有据；保留证据边界是对设想性质的评述，不是新增效果判断。"
+        },
+        {
+          "article_excerpt": "作者明确指出，医疗AI的临床转化、采纳与应用仍有重大挑战。“更普适”是研究目标，不能代替对实际应用效果的验证。",
+          "status": "supported",
+          "evidence": [
+            {
+              "card_id": "MED5",
+              "page": 4,
+              "quote": "Despite recent advancements, signi ﬁcant challenges remain for the translation, adoption, and application of MAI."
+            },
+            {
+              "card_id": "MED1",
+              "page": 1,
+              "quote": "This article discusses the foresee-able transition from specialized MAI models toward more universally applicable models."
+            }
+          ],
+          "reason": "挑战与未来转向均有直接依据；末句正确区分研究目标与效果证据，没有虚构验证结果。"
+        }
+      ]
+    }
+  ]
+}
